@@ -279,7 +279,7 @@ onMounted(() => {
 
         <!-- Minimal Header Right (GPS Status Indicator & Drawer Hamburger ONLY) -->
         <div class="flex items-center gap-2 shrink-0">
-          <GpsLiveIndicator placement="bottom" />
+          <GpsLiveIndicator v-if="authUser?.role === 'admin'" placement="bottom" />
           <button
             @click="isMobileMenuOpen = !isMobileMenuOpen"
             type="button"
@@ -302,10 +302,6 @@ onMounted(() => {
         <div v-if="todayAttendance" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
           <CheckCircle2 class="w-3 h-3" />
           <span>{{ todayAttendance.log_time }}</span>
-        </div>
-        <div v-else class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
-          <AlertTriangle class="w-3 h-3 animate-pulse" />
-          <span>{{ t('gpsWaiting') }}</span>
         </div>
       </div>
     </header>
@@ -421,7 +417,7 @@ onMounted(() => {
 
         <!-- Right Action Toolbar (GPS, Accent, Theme, Lang, User) -->
         <div class="flex items-center gap-2">
-          <GpsLiveIndicator placement="bottom" />
+          <GpsLiveIndicator v-if="authUser?.role === 'admin'" placement="bottom" />
           <AccentPicker placement="bottom" />
           <ThemeToggle />
           <LanguageToggle />

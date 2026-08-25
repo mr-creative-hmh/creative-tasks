@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { gpsState, syncCurrentGpsLocation } from '@/Services/gpsTracker';
 import { t } from '@/i18n';
 import {
@@ -21,6 +22,11 @@ const props = defineProps({
   }
 });
 
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user);
+const isAdmin = computed(() => authUser.value?.role === 'admin');
+
 const isOpen = ref(false);
 
 function triggerManualSync() {
@@ -29,7 +35,7 @@ function triggerManualSync() {
 </script>
 
 <template>
-  <div class="relative inline-block text-xs select-none">
+  <div v-if="isAdmin" class="relative inline-block text-xs select-none">
     <!-- Trigger Pill Button -->
     <button
       @click.stop="isOpen = !isOpen"
