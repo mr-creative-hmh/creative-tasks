@@ -17,8 +17,7 @@ import {
   Lock,
   Sparkles,
   Save,
-  Moon,
-  Globe
+  Briefcase
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -42,6 +41,7 @@ const layout = computed(() => {
 
 const profileForm = useForm({
   name: props.user.name,
+  job_title: props.user.job_title || '',
   email: props.user.email,
 });
 
@@ -95,6 +95,13 @@ function updatePassword() {
             </div>
             <div class="min-w-0 flex-1">
               <h1 class="text-base sm:text-lg font-black tracking-tight truncate leading-tight">{{ user.name }}</h1>
+              
+              <!-- Job Title Badge in Hero -->
+              <div v-if="user.job_title" class="inline-flex items-center gap-1 text-xs text-sky-100 font-semibold mt-0.5">
+                <Briefcase class="w-3.5 h-3.5" />
+                <span>{{ user.job_title }}</span>
+              </div>
+              
               <div class="text-xs text-sky-100/90 font-mono truncate mt-0.5">{{ user.email }}</div>
               
               <div class="flex flex-wrap items-center gap-1.5 mt-2">
@@ -112,7 +119,7 @@ function updatePassword() {
 
           <!-- Attendance Info Pill on Mobile & Desktop -->
           <div v-if="todayAttendance" class="w-full sm:w-auto px-3.5 py-2 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-xs flex items-center justify-between sm:block">
-            <span class="text-[10px] text-sky-100">تسجيل حضور اليوم:</span>
+            <span class="text-[10px] text-sky-100">{{ t('todayAttendanceTime') }}</span>
             <div class="font-bold font-mono">⏰ {{ todayAttendance.log_time }}</div>
           </div>
         </div>
@@ -129,8 +136,9 @@ function updatePassword() {
           </div>
 
           <form @submit.prevent="updateProfile" class="space-y-3.5 text-xs">
+            <!-- Name -->
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userName') }}</label>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userName') }} *</label>
               <input
                 v-model="profileForm.name"
                 type="text"
@@ -140,8 +148,21 @@ function updatePassword() {
               <span v-if="profileForm.errors.name" class="text-rose-500 text-[10px] mt-1">{{ profileForm.errors.name }}</span>
             </div>
 
+            <!-- Job Title -->
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('email') }}</label>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('jobTitle') }}</label>
+              <input
+                v-model="profileForm.job_title"
+                type="text"
+                :placeholder="t('jobTitlePlaceholder')"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
+              />
+              <span v-if="profileForm.errors.job_title" class="text-rose-500 text-[10px] mt-1">{{ profileForm.errors.job_title }}</span>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('email') }} *</label>
               <input
                 v-model="profileForm.email"
                 type="email"
@@ -158,12 +179,12 @@ function updatePassword() {
                 class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-500/20 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Save class="w-3.5 h-3.5" />
-                <span>{{ profileForm.processing ? 'جاري الحفظ...' : t('save') }}</span>
+                <span>{{ profileForm.processing ? t('saving') : t('save') }}</span>
               </button>
 
               <span v-if="profileSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-fade-in">
                 <CheckCircle2 class="w-4 h-4" />
-                <span>تم الحفظ!</span>
+                <span>{{ t('savedSuccess') }}</span>
               </span>
             </div>
           </form>
@@ -219,12 +240,12 @@ function updatePassword() {
                 class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold shadow-md shadow-amber-500/20 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Lock class="w-3.5 h-3.5" />
-                <span>{{ passwordForm.processing ? 'جاري التغيير...' : 'تحديث كلمة المرور' }}</span>
+                <span>{{ passwordForm.processing ? t('saving') : t('changePassword') }}</span>
               </button>
 
               <span v-if="passwordSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-fade-in">
                 <CheckCircle2 class="w-4 h-4" />
-                <span>تم التغيير!</span>
+                <span>{{ t('passwordChangedSuccess') }}</span>
               </span>
             </div>
           </form>
@@ -252,7 +273,7 @@ function updatePassword() {
           <div class="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
             <div class="min-w-0 flex-1 pl-2">
               <div class="font-bold text-slate-900 dark:text-white mb-0.5">{{ t('languagePref') }}</div>
-              <div class="text-[11px] text-slate-500 dark:text-slate-400">لغة الواجهة (العربية / English)</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">Interface Language (العربية / English)</div>
             </div>
             <LanguageToggle />
           </div>

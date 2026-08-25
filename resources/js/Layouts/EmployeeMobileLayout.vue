@@ -1,18 +1,19 @@
 <script setup>
-import { computed } from 'vue';
-import { usePage, router, Link } from '@inertiajs/vue3';
-import { t, currentLocale } from '@/i18n';
+import { ref, computed } from 'vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
+import { t } from '@/i18n';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import {
   GraduationCap,
-  LogOut,
+  CheckSquare,
   Clock,
-  ShieldCheck,
   CheckCircle2,
   AlertTriangle,
+  LogOut,
   User,
-  LayoutDashboard
+  ShieldCheck,
+  Briefcase
 } from 'lucide-vue-next';
 
 const page = usePage();
@@ -36,8 +37,10 @@ function logout() {
             <GraduationCap class="w-5 h-5" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight">جامعة المأمون</div>
-            <div class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5 truncate">{{ authUser?.name }}</div>
+            <div class="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight">{{ t('appName') }}</div>
+            <div class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5 truncate">
+              {{ authUser?.name }}{{ authUser?.job_title ? ` (${authUser.job_title})` : '' }}
+            </div>
           </div>
         </Link>
 
@@ -48,7 +51,7 @@ function logout() {
           <button
             @click="logout"
             type="button"
-            title="تسجيل الخروج"
+            :title="t('logout')"
             class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
           >
             <LogOut class="w-4 h-4" />
@@ -60,7 +63,7 @@ function logout() {
       <div class="mt-2.5 flex flex-wrap items-center justify-between gap-1.5 text-[11px] bg-slate-50 dark:bg-slate-950/70 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80">
         <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
           <Clock class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-          <span>الدوام: {{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}</span>
+          <span>{{ t('shiftHours') }}: {{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}</span>
         </div>
 
         <div v-if="todayAttendance" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/40">
@@ -69,7 +72,7 @@ function logout() {
         </div>
         <div v-else class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
           <AlertTriangle class="w-3 h-3" />
-          <span>بانتظار الـ GPS</span>
+          <span>{{ t('gpsWaiting') }}</span>
         </div>
       </div>
     </header>
@@ -92,7 +95,7 @@ function logout() {
         <div :class="page.url.startsWith('/employee') ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400' : 'text-slate-500'" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all">
           <GraduationCap class="w-4 h-4" />
         </div>
-        <span>مهامي الجامعية</span>
+        <span>{{ t('navEmployeePortal') }}</span>
       </Link>
 
       <Link
@@ -103,7 +106,7 @@ function logout() {
         <div class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors">
           <ShieldCheck class="w-4 h-4" />
         </div>
-        <span>لوحة الإدارة</span>
+        <span>{{ t('navDashboard') }}</span>
       </Link>
 
       <Link
@@ -114,7 +117,7 @@ function logout() {
         <div :class="page.url.startsWith('/profile') ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400' : 'text-slate-500'" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all">
           <User class="w-4 h-4" />
         </div>
-        <span>حسابي</span>
+        <span>{{ t('navProfile') }}</span>
       </Link>
     </nav>
   </div>

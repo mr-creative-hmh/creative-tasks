@@ -235,7 +235,7 @@ function deleteTask(task) {
           >
             <option value="">{{ t('allEmployees') }}</option>
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-              {{ emp.name }} {{ emp.job_title ? `— ${emp.job_title}` : '' }}
+              {{ emp.name }}{{ emp.job_title ? ` (${emp.job_title})` : '' }}
             </option>
           </select>
         </div>
@@ -302,7 +302,7 @@ function deleteTask(task) {
 
               <td class="py-3.5 px-4">
                 <div class="font-semibold text-slate-800 dark:text-slate-200">{{ task.user?.name }}</div>
-                <div v-if="task.user?.job_title" class="text-[10px] text-sky-600 dark:text-sky-400">
+                <div v-if="task.user?.job_title" class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold">
                   {{ task.user.job_title }}
                 </div>
               </td>
@@ -413,7 +413,7 @@ function deleteTask(task) {
             </select>
           </div>
 
-          <!-- Assignee Selector (Shows filtered staff with Job Title & Department) -->
+          <!-- Assignee Selector (Shows filtered staff with Job Title ONLY when present) -->
           <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('assignTo') }} *</label>
             <select
@@ -424,7 +424,7 @@ function deleteTask(task) {
             >
               <option value="" disabled>{{ t('selectEmployeePlaceholder') }}</option>
               <option v-for="emp in filteredModalEmployees" :key="emp.id" :value="emp.id">
-                {{ emp.name }} {{ emp.job_title ? `— [${emp.job_title}]` : '' }} ({{ emp.department?.name || t('department') }})
+                {{ emp.name }}{{ emp.job_title ? ` (${emp.job_title})` : '' }}
               </option>
             </select>
           </div>
