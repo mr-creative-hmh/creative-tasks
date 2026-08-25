@@ -37,7 +37,7 @@ class DepartmentAndReportTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_export_pdf_report(): void
+    public function test_admin_can_view_printable_pdf_report(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $dept = Department::create(['name' => 'قسم تكنولوجيا المعلومات']);
@@ -54,10 +54,10 @@ class DepartmentAndReportTest extends TestCase
         $response = $this->actingAs($admin)->get('/reports/pdf?date_from=2026-01-01&date_to=2026-12-31');
 
         $response->assertStatus(200);
-        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertSee('جامعة المأمون');
     }
 
-    public function test_admin_can_export_excel_report(): void
+    public function test_admin_can_export_native_xlsx_excel_report(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $dept = Department::create(['name' => 'قسم تكنولوجيا المعلومات']);
@@ -74,7 +74,7 @@ class DepartmentAndReportTest extends TestCase
         $response = $this->actingAs($admin)->get('/reports/excel?date_from=2026-01-01&date_to=2026-12-31');
 
         $response->assertStatus(200);
-        $this->assertStringContainsString('text/csv', $response->headers->get('content-type'));
+        $this->assertStringContainsString('spreadsheetml.sheet', $response->headers->get('content-type'));
     }
 
     public function test_employee_cannot_access_reports(): void

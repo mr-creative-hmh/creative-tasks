@@ -5,19 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\Task;
 use App\Models\Department;
 use App\Models\User;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class ReportController extends Controller
 {
-    public function index(Request $request): Response
+    private function buildQuery(Request $request, $user)
     {
-        $user = $request->user();
         $departmentId = $request->input('department_id');
         if ($user->role === 'head') {
             $departmentId = $user->department_id;
@@ -26,25 +28,42 @@ class ReportController extends Controller
         $userId = $request->input('user_id');
         $status = $request->input('status');
         $taskType = $request->input('task_type');
-        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
-        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
 
-        $query = Task::with(['user.department', 'assigner', 'department'])
-            ->whereBetween('task_date', [$dateFrom, $dateTo]);
+        $query = Task::with(['user.department', 'assigner', 'department']);
 
-        if ($departmentId) {
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('task_date', [$dateFrom, $dateTo]);
+        } elseif ($request->filled('date_from')) {
+            $query->where('task_date', '>=', $dateFrom);
+        } elseif ($request->filled('date_to')) {
+            $query->where('task_date', '<=', $dateTo);
+        }
+
+        if ($request->filled('department_id') || ($user->role === 'head' && $departmentId)) {
             $query->where('department_id', $departmentId);
         }
-        if ($userId) {
+        if ($request->filled('user_id')) {
             $query->where('user_id', $userId);
         }
-        if ($status) {
+        if ($request->filled('status')) {
             $query->where('status', $status);
         }
-        if ($taskType) {
+        if ($request->filled('task_type')) {
             $query->where('task_type', $taskType);
         }
 
+        return $query;
+    }
+
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
+
+        $query = $this->buildQuery($request, $user);
         $tasks = (clone $query)->latest('task_date')->get();
 
         $totalTasks = $tasks->count();
@@ -55,7 +74,7 @@ class ReportController extends Controller
         $selfTypeCount = $tasks->where('task_type', 'self_reported')->count();
         $avgProgress = $totalTasks > 0 ? round($tasks->avg('progress'), 1) : 0;
 
-        // Group by employee for leaderboard
+        // Group by employee
         $employeePerformance = $tasks->groupBy('user_id')->map(function ($employeeTasks) {
             $emp = $employeeTasks->first()->user;
             $empTotal = $employeeTasks->count();
@@ -65,7 +84,7 @@ class ReportController extends Controller
             $empAvg = $empTotal > 0 ? round($employeeTasks->avg('progress'), 1) : 0;
             return [
                 'user_id' => $emp?->id,
-                'user_name' => $emp?->name,
+                'user_name' => $emp?->name ?? 'غير محدد',
                 'department_name' => $emp?->department?->name ?? 'بدون قسم',
                 'total_tasks' => $empTotal,
                 'completed_tasks' => $empCompleted,
@@ -75,7 +94,7 @@ class ReportController extends Controller
             ];
         })->values()->sortByDesc('avg_progress')->values();
 
-        // Group by department for department chart
+        // Group by department
         $departmentPerformance = $tasks->groupBy('department_id')->map(function ($deptTasks) {
             $dept = $deptTasks->first()->department;
             $deptTotal = $deptTasks->count();
@@ -113,17 +132,17 @@ class ReportController extends Controller
             'departments' => $departments,
             'employees' => $employees,
             'filters' => [
-                'department_id' => $departmentId,
-                'user_id' => $userId,
-                'status' => $status,
-                'task_type' => $taskType,
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
+                'department_id' => $request->input('department_id', ''),
+                'user_id' => $request->input('user_id', ''),
+                'status' => $request->input('status', ''),
+                'task_type' => $request->input('task_type', ''),
+                'date_from' => $request->input('date_from', $dateFrom),
+                'date_to' => $request->input('date_to', $dateTo),
             ],
         ]);
     }
 
-    public function exportPdf(Request $request): HttpResponse
+    public function printReport(Request $request)
     {
         $user = $request->user();
         $departmentId = $request->input('department_id');
@@ -132,27 +151,10 @@ class ReportController extends Controller
         }
 
         $userId = $request->input('user_id');
-        $status = $request->input('status');
-        $taskType = $request->input('task_type');
-        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
+        $dateFrom = $request->input('date_from', '2026-01-01');
         $dateTo = $request->input('date_to', Carbon::today()->toDateString());
 
-        $query = Task::with(['user.department', 'assigner', 'department'])
-            ->whereBetween('task_date', [$dateFrom, $dateTo]);
-
-        if ($departmentId) {
-            $query->where('department_id', $departmentId);
-        }
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
-        if ($status) {
-            $query->where('status', $status);
-        }
-        if ($taskType) {
-            $query->where('task_type', $taskType);
-        }
-
+        $query = $this->buildQuery($request, $user);
         $tasks = $query->latest('task_date')->get();
 
         $totalTasks = $tasks->count();
@@ -164,7 +166,6 @@ class ReportController extends Controller
         $department = $departmentId ? Department::find($departmentId) : null;
         $employee = $userId ? User::find($userId) : null;
 
-        // Group summary by department
         $departmentSummary = $tasks->groupBy('department_id')->map(function ($deptTasks) {
             $dept = $deptTasks->first()->department;
             return [
@@ -175,7 +176,7 @@ class ReportController extends Controller
             ];
         })->values();
 
-        $pdf = Pdf::loadView('reports.task_performance_pdf', [
+        return view('reports.printable_report', [
             'tasks' => $tasks,
             'totalTasks' => $totalTasks,
             'completedTasks' => $completedTasks,
@@ -189,99 +190,127 @@ class ReportController extends Controller
             'dateTo' => $dateTo,
             'generatedBy' => $user->name,
             'generatedAt' => Carbon::now()->format('Y-m-d H:i'),
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download("almamon-performance-report-{$dateFrom}-to-{$dateTo}.pdf");
+        ]);
     }
 
     public function exportExcel(Request $request): StreamedResponse
     {
         $user = $request->user();
-        $departmentId = $request->input('department_id');
-        if ($user->role === 'head') {
-            $departmentId = $user->department_id;
-        }
-
-        $userId = $request->input('user_id');
-        $status = $request->input('status');
-        $taskType = $request->input('task_type');
         $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
         $dateTo = $request->input('date_to', Carbon::today()->toDateString());
 
-        $query = Task::with(['user.department', 'assigner', 'department'])
-            ->whereBetween('task_date', [$dateFrom, $dateTo]);
-
-        if ($departmentId) {
-            $query->where('department_id', $departmentId);
-        }
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
-        if ($status) {
-            $query->where('status', $status);
-        }
-        if ($taskType) {
-            $query->where('task_type', $taskType);
-        }
-
+        $query = $this->buildQuery($request, $user);
         $tasks = $query->latest('task_date')->get();
 
-        $filename = "almamon-tasks-report-{$dateFrom}-to-{$dateTo}.csv";
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('تقرير المهام');
+        $sheet->setRightToLeft(true);
 
+        // Header Title
+        $sheet->setCellValue('A1', 'جامعة المأمون - تقرير الأداء ومتابعة إنجاز المهام المؤسسية');
+        $sheet->mergeCells('A1:J1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0369A1'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Meta info
+        $sheet->setCellValue('A2', "الفترة: من {$dateFrom} إلى {$dateTo} | تاريخ السحب: " . date('Y-m-d H:i') . " | المشرف: {$user->name}");
+        $sheet->mergeCells('A2:J2');
+        $sheet->getStyle('A2')->getFont()->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Table Column Headers
         $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+            'A4' => '#',
+            'B4' => 'عنوان المهمة / التكليف',
+            'C4' => 'الموظف المكلف',
+            'D4' => 'البريد الإلكتروني',
+            'E4' => 'الكلية / القسم',
+            'F4' => 'نوع المهمة',
+            'G4' => 'نسبة الإنجاز',
+            'H4' => 'حالة المهمة',
+            'I4' => 'جهة التكليف',
+            'J4' => 'تاريخ المهمة',
         ];
 
-        return response()->stream(function () use ($tasks) {
-            $handle = fopen('php://output', 'w');
-            
-            // UTF-8 BOM for Microsoft Excel compatibility with Arabic
-            fputs($handle, "\xEF\xBB\xBF");
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
 
-            // Header Row
-            fputcsv($handle, [
-                '#',
-                'عنوان المهمة / التكليف',
-                'الموظف المكلف',
-                'البريد الإلكتروني',
-                'الكلية / القسم',
-                'نوع المهمة',
-                'نسبة الإنجاز (%)',
-                'حالة المهمة',
-                'جهة التكليف',
-                'تاريخ المهمة',
-                'التفاصيل والتوجيهات',
-            ]);
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['argb' => 'FFFFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FF0369A1'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFCBD5E1'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A4:J4')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(4)->setRowHeight(28);
 
-            foreach ($tasks as $index => $task) {
-                $statusLabel = match($task->status) {
-                    'completed' => 'مكتملة',
-                    'in_progress' => 'قيد التنفيذ',
-                    default => 'معلقة',
-                };
+        // Fill Data Rows
+        $row = 5;
+        foreach ($tasks as $index => $task) {
+            $statusLabel = match($task->status) {
+                'completed' => 'مكتملة',
+                'in_progress' => 'قيد التنفيذ',
+                default => 'معلقة',
+            };
 
-                $typeLabel = $task->task_type === 'assigned' ? 'تكليف رسمي' : 'عمل ذاتي';
+            $typeLabel = $task->task_type === 'assigned' ? 'تكليف رسمي' : 'عمل ذاتي';
 
-                fputcsv($handle, [
-                    $index + 1,
-                    $task->title,
-                    $task->user?->name ?? 'غير محدد',
-                    $task->user?->email ?? '-',
-                    $task->department?->name ?? 'بدون قسم',
-                    $typeLabel,
-                    $task->progress . '%',
-                    $statusLabel,
-                    $task->assigner?->name ?? 'تسجيل ذاتي',
-                    $task->task_date ? $task->task_date->format('Y-m-d') : '',
-                    $task->description ?? '',
-                ]);
+            $sheet->setCellValue("A{$row}", $index + 1);
+            $sheet->setCellValue("B{$row}", $task->title);
+            $sheet->setCellValue("C{$row}", $task->user?->name ?? 'غير محدد');
+            $sheet->setCellValue("D{$row}", $task->user?->email ?? '-');
+            $sheet->setCellValue("E{$row}", $task->department?->name ?? 'بدون قسم');
+            $sheet->setCellValue("F{$row}", $typeLabel);
+            $sheet->setCellValue("G{$row}", $task->progress . '%');
+            $sheet->setCellValue("H{$row}", $statusLabel);
+            $sheet->setCellValue("I{$row}", $task->assigner?->name ?? 'تسجيل ذاتي');
+            $sheet->setCellValue("J{$row}", $task->task_date ? $task->task_date->format('Y-m-d') : '-');
+
+            // Alternating Row Colors
+            if ($row % 2 === 0) {
+                $sheet->getStyle("A{$row}:J{$row}")->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFF8FAFC');
             }
 
-            fclose($handle);
-        }, 200, $headers);
+            // Alignments
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}:J{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $row++;
+        }
+
+        // Auto size columns
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = "almamon-tasks-report-{$dateFrom}-to-{$dateTo}.xlsx";
+
+        return new StreamedResponse(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 }
