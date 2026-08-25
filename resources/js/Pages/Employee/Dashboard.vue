@@ -99,121 +99,125 @@ function addSelfTask() {
               <Calendar class="w-3.5 h-3.5" />
               <span>{{ t('today') }}: {{ summary.today_date }}</span>
             </div>
-            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">{{ t('todayCompletion') }}</h2>
-            <p class="text-xs text-sky-100/90 mt-0.5">
+            <h2 class="text-xl sm:text-2xl font-black">{{ t('myTasks') }}</h2>
+            <p class="text-xs text-sky-100/90 mt-1">
               {{ t('tasksCompletionSummary', { completed: summary.completed, total: summary.total }) }}
             </p>
           </div>
 
-          <!-- Progress Percentage Circle -->
-          <div class="shrink-0 flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20">
-            <span class="text-lg sm:text-2xl font-black text-white font-mono">{{ summary.avg_progress }}%</span>
-            <span class="text-[9px] sm:text-[10px] font-bold text-sky-100">{{ t('avgProgress') }}</span>
+          <div class="text-end">
+            <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight">{{ summary.avg_progress }}%</div>
+            <div class="text-[10px] text-sky-200 uppercase font-bold">{{ t('todayCompletion') }}</div>
           </div>
         </div>
 
-        <!-- Linear progress bar -->
-        <div class="mt-4 w-full bg-black/20 rounded-full h-2.5 overflow-hidden">
-          <div 
-            class="bg-gradient-to-r from-teal-300 to-emerald-400 h-full rounded-full transition-all duration-500" 
+        <!-- Progress Track Bar -->
+        <div class="w-full bg-black/20 rounded-full h-2.5 mt-4 p-0.5 overflow-hidden backdrop-blur-xs">
+          <div
+            class="bg-white h-full rounded-full transition-all duration-500 shadow-sm"
             :style="{ width: `${summary.avg_progress}%` }"
           ></div>
         </div>
       </div>
 
-      <!-- Segmented Tab Switcher (Assigned vs Self-Reported) -->
-      <div class="bg-slate-200/80 dark:bg-slate-900/80 p-1.5 rounded-2xl flex items-center gap-1.5 border border-slate-300/60 dark:border-slate-800">
-        <button
-          @click="activeTab = 'assigned'"
-          type="button"
-          :class="activeTab === 'assigned' ? 'bg-white dark:bg-slate-800 text-accent font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 font-medium'"
-          class="flex-1 py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
-        >
-          <CheckSquare class="w-4 h-4 text-accent" />
-          <span>{{ t('tabAssigned') }} ({{ assignedTasks.length }})</span>
-        </button>
-
-        <button
-          @click="activeTab = 'self_reported'"
-          type="button"
-          :class="activeTab === 'self_reported' ? 'bg-white dark:bg-slate-800 text-accent font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 font-medium'"
-          class="flex-1 py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
-        >
-          <Sparkles class="w-4 h-4 text-amber-500" />
-          <span>{{ t('tabSelfReported') }} ({{ selfReportedTasks.length }})</span>
-        </button>
-      </div>
-
-      <!-- Tab 1: Officially Assigned Tasks -->
-      <div v-if="activeTab === 'assigned'" class="space-y-4">
-        <div v-if="assignedTasks.length === 0" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 text-center">
-          <div class="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-accent mx-auto flex items-center justify-center mb-3">
-            <CheckCircle2 class="w-6 h-6" />
+      <!-- Quick Add Self-Reported Task -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 rounded-xl bg-accent-light text-accent flex items-center justify-center font-bold">
+            <Sparkles class="w-4 h-4" />
           </div>
-          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ t('noTasksAssigned') }}</h3>
-          <p class="text-xs text-slate-400 mt-1">{{ t('noTasksAssignedDesc') }}</p>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 dark:text-white">{{ t('quickSelfTitle') }}</h3>
+            <p class="text-[11px] text-slate-400">{{ t('quickSelfSubtitle') }}</p>
+          </div>
         </div>
 
-        <TaskCard 
-          v-for="task in assignedTasks" 
-          :key="task.id" 
-          :task="task" 
-        />
+        <form @submit.prevent="addSelfTask" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <input
+            v-model="selfReportForm.title"
+            type="text"
+            required
+            :placeholder="t('quickAddPlaceholder')"
+            class="flex-1 h-10 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-sky-500 font-medium"
+          />
+          <button
+            :disabled="selfReportForm.processing || !selfReportForm.title.trim()"
+            type="submit"
+            class="h-10 px-5 rounded-xl bg-accent bg-accent-hover text-white text-xs font-bold shadow-accent active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Plus class="w-4 h-4" />
+            <span>{{ selfReportForm.processing ? t('saving') : t('addQuickTask') }}</span>
+          </button>
+        </form>
       </div>
 
-      <!-- Tab 2: Self-Reported Tasks & Quick Form -->
-      <div v-if="activeTab === 'self_reported'" class="space-y-4">
-        <!-- Quick Add Self Task Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <Sparkles class="w-4 h-4" />
-            </div>
-            <div>
-              <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ t('quickSelfTitle') }}</h3>
-              <p class="text-[10px] text-slate-500">{{ t('quickSelfSubtitle') }}</p>
-            </div>
-          </div>
+      <!-- Tasks Section with Tabs -->
+      <div class="space-y-4">
+        <!-- Tabs Header -->
+        <div class="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit">
+          <button
+            @click="activeTab = 'assigned'"
+            :class="activeTab === 'assigned' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-500 dark:text-slate-400 font-semibold hover:text-slate-700'"
+            class="px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>{{ t('tabAssigned') }}</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-mono">
+              {{ assignedTasks.length }}
+            </span>
+          </button>
 
-          <form @submit.prevent="addSelfTask" class="space-y-3">
-            <div class="flex items-center gap-2">
-              <input
-                v-model="selfReportForm.title"
-                type="text"
-                required
-                :placeholder="t('quickAddPlaceholder')"
-                class="flex-1 h-10 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all font-medium"
-              />
-              <button
-                :disabled="selfReportForm.processing || !selfReportForm.title.trim()"
-                type="submit"
-                class="h-10 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-accent disabled:opacity-50 shrink-0 cursor-pointer"
-              >
-                <Plus class="w-4 h-4" />
-                <span>{{ t('add') }}</span>
-              </button>
-            </div>
-
-            <div v-if="selfReportForm.errors.title" class="text-xs text-rose-600 ps-1">
-              {{ selfReportForm.errors.title }}
-            </div>
-          </form>
+          <button
+            @click="activeTab = 'self_reported'"
+            :class="activeTab === 'self_reported' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-500 dark:text-slate-400 font-semibold hover:text-slate-700'"
+            class="px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>{{ t('tabSelfReported') }}</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-mono">
+              {{ selfReportedTasks.length }}
+            </span>
+          </button>
         </div>
 
-        <!-- Self-Reported Tasks List -->
-        <div v-if="selfReportedTasks.length === 0" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 text-center">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 mx-auto flex items-center justify-center mb-3">
-            <Sparkles class="w-6 h-6" />
+        <!-- Assigned Tasks Tab Content -->
+        <div v-if="activeTab === 'assigned'" class="space-y-3">
+          <div v-if="assignedTasks.length === 0" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <CheckSquare class="w-6 h-6" />
+            </div>
+            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ t('noTasksAssigned') }}</h4>
+            <p class="text-xs text-slate-400 mt-1">{{ t('noTasksAssignedDesc') }}</p>
           </div>
-          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ t('noSelfTasks') }}</h3>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TaskCard
+              v-for="task in assignedTasks"
+              :key="task.id"
+              :task="task"
+            />
+          </div>
         </div>
 
-        <TaskCard 
-          v-for="task in selfReportedTasks" 
-          :key="task.id" 
-          :task="task" 
-        />
+        <!-- Self-Reported Tasks Tab Content -->
+        <div v-if="activeTab === 'self_reported'" class="space-y-3">
+          <div v-if="selfReportedTasks.length === 0" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <Sparkles class="w-6 h-6" />
+            </div>
+            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ t('noSelfTasks') }}</h4>
+            <p class="text-xs text-slate-400 mt-1">{{ t('quickSelfSubtitle') }}</p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TaskCard
+              v-for="task in selfReportedTasks"
+              :key="task.id"
+              :task="task"
+            />
+          </div>
+        </div>
+
       </div>
+
     </div>
   </AppLayout>
 </template>

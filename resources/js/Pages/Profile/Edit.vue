@@ -189,8 +189,8 @@ function updatePassword() {
                 v-model="passwordForm.current_password"
                 type="password"
                 required
-                placeholder="••••••••"
-                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs font-medium transition-colors"
+                autocomplete="current-password"
+                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
               />
               <span v-if="passwordForm.errors.current_password" class="text-rose-500 text-[10px] mt-1">{{ passwordForm.errors.current_password }}</span>
             </div>
@@ -202,21 +202,21 @@ function updatePassword() {
                 v-model="passwordForm.password"
                 type="password"
                 required
-                placeholder="••••••••"
-                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs font-medium transition-colors"
+                autocomplete="new-password"
+                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
               />
               <span v-if="passwordForm.errors.password" class="text-rose-500 text-[10px] mt-1">{{ passwordForm.errors.password }}</span>
             </div>
 
-            <!-- Confirm Password -->
+            <!-- Confirm New Password -->
             <div>
               <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{{ t('confirmNewPassword') }} *</label>
               <input
                 v-model="passwordForm.password_confirmation"
                 type="password"
                 required
-                placeholder="••••••••"
-                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs font-medium transition-colors"
+                autocomplete="new-password"
+                class="w-full h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
               />
             </div>
 
@@ -224,10 +224,10 @@ function updatePassword() {
               <button
                 :disabled="passwordForm.processing"
                 type="submit"
-                class="w-full sm:w-auto h-10 px-5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 active:scale-95 text-white font-bold shadow-md disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                class="w-full sm:w-auto h-10 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 active:scale-95 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
-                <Lock class="w-3.5 h-3.5" />
-                <span>{{ passwordForm.processing ? t('saving') : t('updatePassword') }}</span>
+                <KeyRound class="w-3.5 h-3.5" />
+                <span>{{ passwordForm.processing ? t('saving') : t('changePassword') }}</span>
               </button>
 
               <span v-if="passwordSaved" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-fade-in">
@@ -239,7 +239,6 @@ function updatePassword() {
         </div>
 
       </div>
-
     </div>
   </AppLayout>
 </template>

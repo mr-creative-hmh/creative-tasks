@@ -1,8 +1,7 @@
 <script setup>
-import { onMounted, ref, watch, nextTick } from 'vue';
-import { i18nState, t } from '@/i18n';
-import L from 'leaflet';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 const props = defineProps({
   points: {
@@ -15,7 +14,7 @@ const props = defineProps({
   },
   selectedCoords: {
     type: Object,
-    default: null
+    default: () => null
   }
 });
 
@@ -26,12 +25,15 @@ let map = null;
 let markersLayer = null;
 let manualMarker = null;
 
-// Al-Ma'moon University, Baghdad Coordinates
-const defaultLat = 33.31524;
-const defaultLng = 44.36612;
+// Campus center (Baghdad / Al-Ma'moon University)
+const defaultLat = 33.3152;
+const defaultLng = 44.3661;
 
 function getLeaflet() {
-  return (typeof window !== 'undefined' && window.L) ? window.L : L;
+  if (typeof window !== 'undefined') {
+    return window.L || L;
+  }
+  return null;
 }
 
 function initMap() {
@@ -70,20 +72,19 @@ function initMap() {
     radius: 400
   }).addTo(map);
 
-  // If editable, listen to map clicks
-  if (props.editable) {
-    map.on('click', (e) => {
-      const { lat, lng } = e.latlng;
-      setManualPin(lat, lng);
-      emit('select-coordinates', { latitude: lat, longitude: lng });
-    });
-  }
+  // Map Click Handler for Manual Pinning
+  map.on('click', handleMapClick);
 
   renderMarkers();
 
   // If already has selected coords
-  if (props.selectedCoords && props.selectedCoords.latitude) {
+  if (props.selectedCoords && props.selectedCoords.latitude && props.selectedCoords.longitude) {
     setManualPin(props.selectedCoords.latitude, props.selectedCoords.longitude);
+  }
+
+  // Set initial cursor
+  if (mapContainer.value) {
+    mapContainer.value.style.cursor = props.editable ? 'crosshair' : 'grab';
   }
 
   // Trigger resize to prevent grey tiles
@@ -92,20 +93,34 @@ function initMap() {
   }, 300);
 }
 
+function handleMapClick(e) {
+  if (!props.editable) return;
+  const { lat, lng } = e.latlng;
+  setManualPin(lat, lng);
+  emit('select-coordinates', { latitude: lat, longitude: lng });
+}
+
 function setManualPin(lat, lng) {
   if (!map) return;
   const leafletInstance = getLeaflet();
   if (!leafletInstance) return;
 
   if (manualMarker) {
-    markersLayer?.removeLayer(manualMarker);
+    markersLayer.removeLayer(manualMarker);
   }
 
   const pinIcon = leafletInstance.divIcon({
     className: 'custom-manual-pin',
-    html: `<div style="background-color: #f43f5e; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 12px rgba(244,63,94,0.7); animation: bounce 1s infinite alternate; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">📍</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    html: `
+      <div class="relative flex items-center justify-center">
+        <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-rose-400 opacity-75"></span>
+        <div class="w-8 h-8 rounded-full bg-rose-600 border-2 border-white shadow-xl flex items-center justify-center text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
   });
 
   manualMarker = leafletInstance.marker([lat, lng], { icon: pinIcon }).addTo(markersLayer);
@@ -116,91 +131,90 @@ function renderMarkers() {
   const leafletInstance = getLeaflet();
   if (!leafletInstance) return;
 
+  // Clear existing attendance markers (preserve manualMarker if exists)
   markersLayer.clearLayers();
-
-  const latLngs = [];
+  if (manualMarker) {
+    manualMarker.addTo(markersLayer);
+  }
 
   props.points.forEach((point) => {
-    if (point.latitude && point.longitude) {
-      const latLng = [point.latitude, point.longitude];
-      latLngs.push(latLng);
+    if (!point.latitude || !point.longitude) return;
 
-      const customIcon = leafletInstance.divIcon({
-        className: 'custom-map-marker',
-        html: `
-          <div style="
-            background: linear-gradient(135deg, #0284c7, #0d9488);
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 11px;
-            border: 2px solid #ffffff;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
-          ">
-            ${point.user_name ? point.user_name.substring(0, 1) : 'U'}
+    const userIcon = leafletInstance.divIcon({
+      className: 'custom-user-marker',
+      html: `
+        <div class="relative group">
+          <div class="w-8 h-8 rounded-full bg-sky-600 border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xs">
+            ${point.user_name ? point.user_name.charAt(0) : 'U'}
           </div>
-        `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      });
-
-      const marker = leafletInstance.marker(latLng, { icon: customIcon }).addTo(markersLayer);
-      const isRtl = i18nState.locale === 'ar';
-      
-      const popupContent = `
-        <div style="font-family: inherit; text-align: ${isRtl ? 'right' : 'left'}; direction: ${isRtl ? 'rtl' : 'ltr'}; min-width: 170px; padding: 2px;">
-          <div style="font-weight: 800; color: #0284c7; font-size: 13px;">${point.user_name || ''}</div>
-          <div style="color: #64748b; font-size: 11px; margin-top: 2px;">${point.department_name || ''}</div>
-          <div style="margin-top: 6px; font-size: 11px; color: #1e293b; background: #f0f9ff; padding: 4px 8px; border-radius: 6px;">
-            ⏰ ${t('tableLogTime')}: <strong>${point.log_time}</strong><br>
-            📅 ${t('tableLogDate')}: <strong>${point.log_date}</strong>
-          </div>
-          <div style="margin-top: 4px; font-size: 10px; color: #94a3b8;">
-            📍 (${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)})
-          </div>
+          <span class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
         </div>
-      `;
+      `,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
 
-      marker.bindPopup(popupContent);
-    }
+    const marker = leafletInstance.marker([point.latitude, point.longitude], { icon: userIcon });
+
+    const popupContent = `
+      <div class="p-2 text-start font-sans" dir="rtl">
+        <div class="font-bold text-slate-900 text-xs">${point.user_name || 'موظف'}</div>
+        <div class="text-[11px] text-sky-600 font-semibold">${point.department_name || 'قسم غير محدد'}</div>
+        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+          <span>⏰ وقت الحضور:</span>
+          <span class="font-mono font-bold">${point.log_time || '--:--'}</span>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent);
+    markersLayer.addLayer(marker);
   });
-
-  if (latLngs.length > 0 && !props.selectedCoords) {
-    const bounds = leafletInstance.latLngBounds(latLngs);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-  }
 }
 
 watch(() => props.points, () => {
   renderMarkers();
 }, { deep: true });
 
+watch(() => props.editable, (isEdit) => {
+  if (mapContainer.value) {
+    mapContainer.value.style.cursor = isEdit ? 'crosshair' : 'grab';
+  }
+  if (map) {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }
+});
+
 watch(() => props.selectedCoords, (newCoords) => {
   if (newCoords && newCoords.latitude && newCoords.longitude) {
     setManualPin(newCoords.latitude, newCoords.longitude);
-    map?.panTo([newCoords.latitude, newCoords.longitude]);
   }
 }, { deep: true });
 
 onMounted(() => {
-  nextTick(() => {
-    initMap();
-  });
+  initMap();
+});
+
+onUnmounted(() => {
+  if (map) {
+    map.remove();
+    map = null;
+  }
 });
 </script>
 
 <template>
-  <div class="relative w-full h-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs">
-    <div ref="mapContainer" class="w-full h-full z-0"></div>
+  <div class="relative w-full h-[480px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner z-0">
+    <div ref="mapContainer" class="w-full h-full"></div>
     
-    <!-- Map Instructions overlay for Admin -->
-    <div v-if="editable" class="absolute bottom-3 start-3 z-10 bg-slate-900/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-xl text-[11px] font-semibold border border-slate-700 shadow-lg pointer-events-none flex items-center gap-1.5">
-      <span>{{ t('mapHintAdmin') }}</span>
+    <!-- Floating Map Controls / Mode Indicator -->
+    <div class="absolute top-3 end-3 z-10 flex flex-col gap-2">
+      <div v-if="editable" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-[11px] font-bold shadow-lg flex items-center gap-1.5 animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-white"></span>
+        <span>وضع التحديد اليدوي نشط (انقر لتثبيت الموقع)</span>
+      </div>
     </div>
   </div>
 </template>
