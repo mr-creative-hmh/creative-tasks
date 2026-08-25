@@ -44,12 +44,14 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
+        // Robust date matching using whereDate
         if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('task_date', [$dateFrom, $dateTo]);
+            $query->whereDate('task_date', '>=', $dateFrom)
+                  ->whereDate('task_date', '<=', $dateTo);
         } elseif ($request->filled('date_from')) {
-            $query->where('task_date', '>=', $dateFrom);
+            $query->whereDate('task_date', '>=', $dateFrom);
         } elseif ($request->filled('date_to')) {
-            $query->where('task_date', '<=', $dateTo);
+            $query->whereDate('task_date', '<=', $dateTo);
         }
 
         return $query;
@@ -138,8 +140,8 @@ class ReportController extends Controller
                 'user_id' => $request->input('user_id', ''),
                 'status' => $request->input('status', ''),
                 'task_type' => $request->input('task_type', ''),
-                'date_from' => $request->input('date_from', $dateFrom),
-                'date_to' => $request->input('date_to', $dateTo),
+                'date_from' => $request->has('date_from') ? $request->input('date_from') : $dateFrom,
+                'date_to' => $request->has('date_to') ? $request->input('date_to') : $dateTo,
             ],
         ]);
     }
@@ -170,8 +172,8 @@ class ReportController extends Controller
             ];
         })->values();
 
-        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
-        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
+        $dateFrom = $request->input('date_from', 'كافة الفترات');
+        $dateTo = $request->input('date_to', 'اليوم');
 
         return view('reports.printable_report', [
             'tasks' => $tasks,
@@ -196,8 +198,8 @@ class ReportController extends Controller
         $query = $this->buildQuery($request, $user);
         $tasks = $query->latest('task_date')->get();
 
-        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
-        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
+        $dateFrom = $request->input('date_from', 'كافة الفترات');
+        $dateTo = $request->input('date_to', 'اليوم');
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -300,7 +302,7 @@ class ReportController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $filename = "almamon-tasks-report-{$dateFrom}-to-{$dateTo}.xlsx";
+        $filename = "almamon-tasks-report-" . date('Y-m-d') . ".xlsx";
 
         return new StreamedResponse(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);

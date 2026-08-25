@@ -72,6 +72,17 @@ const filterForm = ref({
   date_to: props.filters.date_to ? String(props.filters.date_to).split('T')[0] : '',
 });
 
+// Helper for local YYYY-MM-DD format (avoids UTC timezone shift)
+function formatLocalDate(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Track active preset state dynamically
+const activePreset = ref('month');
+
 function getCleanFilterParams() {
   const clean = {};
   for (const [key, val] of Object.entries(filterForm.value)) {
@@ -86,33 +97,29 @@ function applyFilters() {
   router.get('/reports', getCleanFilterParams(), { preserveState: true, replace: true });
 }
 
-function resetFilters() {
-  filterForm.value = {
-    department_id: '',
-    user_id: '',
-    status: '',
-    task_type: '',
-    date_from: '',
-    date_to: '',
-  };
+function onManualDateChange() {
+  activePreset.value = 'custom';
   applyFilters();
 }
 
 function setDatePreset(type) {
+  activePreset.value = type;
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = formatLocalDate(now);
 
   if (type === 'today') {
     filterForm.value.date_from = todayStr;
     filterForm.value.date_to = todayStr;
   } else if (type === 'week') {
+    const day = now.getDay(); // 0 is Sunday, 6 is Saturday
+    const diff = (day + 1) % 7; // distance from Saturday
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    filterForm.value.date_from = startOfWeek.toISOString().split('T')[0];
+    startOfWeek.setDate(now.getDate() - diff);
+    filterForm.value.date_from = formatLocalDate(startOfWeek);
     filterForm.value.date_to = todayStr;
   } else if (type === 'month') {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    filterForm.value.date_from = startOfMonth.toISOString().split('T')[0];
+    filterForm.value.date_from = formatLocalDate(startOfMonth);
     filterForm.value.date_to = todayStr;
   } else if (type === 'all') {
     filterForm.value.date_from = '';
@@ -173,7 +180,7 @@ function exportExcel() {
       </div>
     </div>
 
-    <!-- Quick Date Presets Bar -->
+    <!-- Quick Date Presets Bar with Dynamic Highlight Selection -->
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
       <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
         <Calendar class="w-4 h-4 text-sky-600" />
@@ -183,30 +190,45 @@ function exportExcel() {
         <button
           @click="setDatePreset('today')"
           type="button"
-          class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-bold transition-colors cursor-pointer"
+          :class="activePreset === 'today' 
+            ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25' 
+            : 'bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-medium'"
+          class="px-3.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer text-xs"
         >
           {{ t('today') }}
         </button>
+
         <button
           @click="setDatePreset('week')"
           type="button"
-          class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-bold transition-colors cursor-pointer"
+          :class="activePreset === 'week' 
+            ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25' 
+            : 'bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-medium'"
+          class="px-3.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer text-xs"
         >
           {{ t('thisWeek') }}
         </button>
+
         <button
           @click="setDatePreset('month')"
           type="button"
-          class="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300 font-bold border border-sky-200 dark:border-sky-800/60 transition-colors cursor-pointer"
+          :class="activePreset === 'month' 
+            ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25' 
+            : 'bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-medium'"
+          class="px-3.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer text-xs"
         >
           {{ t('thisMonth') }}
         </button>
+
         <button
           @click="setDatePreset('all')"
           type="button"
-          class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-bold transition-colors cursor-pointer"
+          :class="activePreset === 'all' 
+            ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25' 
+            : 'bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-medium'"
+          class="px-3.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer text-xs"
         >
-          {{ t('all') }}
+          {{ t('all') }} (كافة الفترات)
         </button>
       </div>
     </div>
@@ -219,7 +241,7 @@ function exportExcel() {
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('dateFrom') }}</label>
           <input
             v-model="filterForm.date_from"
-            @change="applyFilters"
+            @change="onManualDateChange"
             type="date"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
           />
@@ -230,7 +252,7 @@ function exportExcel() {
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('dateTo') }}</label>
           <input
             v-model="filterForm.date_to"
-            @change="applyFilters"
+            @change="onManualDateChange"
             type="date"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
           />
