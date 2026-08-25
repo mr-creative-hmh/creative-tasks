@@ -74,8 +74,10 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
 
-        // Users & Staff Management
+        // Users & Staff Management + Bulk Excel Import & Template Download
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/template', [UserController::class, 'downloadTemplate'])->name('users.template');
+        Route::post('/users/import', [UserController::class, 'importExcel'])->name('users.import');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');

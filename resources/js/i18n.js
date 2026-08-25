@@ -1,4 +1,4 @@
-﻿import { reactive, computed } from 'vue';
+import { reactive, computed } from 'vue';
 
 const savedLocale = typeof window !== 'undefined' ? localStorage.getItem('app_locale') || 'ar' : 'ar';
 
@@ -33,7 +33,6 @@ export const translations = {
     add: 'إضافة',
     confirm: 'تأكيد',
     confirmDelete: 'هل أنت متأكد من الحذف؟',
-    avgProgress: 'المعدل العام',
     refresh: 'تحديث البيانات',
     filter: 'تصفية وبحث',
     search: 'بحث بالاسم، اللقب، أو البريد...',
@@ -56,6 +55,20 @@ export const translations = {
     yourDepartment: 'قسمك المعتمد',
     allDeptsLabel: 'كافة الكليات والأقسام',
 
+    // Bulk Excel Import & Template
+    importExcel: 'استيراد من إكسل',
+    downloadTemplate: 'تحميل نموذج البيانات (Template)',
+    importModalTitle: 'استيراد الكوادر والموظفين من ملف إكسل',
+    importModalSubtitle: 'يمكنك إضافة وتحديث حسابات الكوادر دفعة واحدة عبر رفع ملف Excel أو CSV',
+    templateStep: 'الخطوة 1: تحميل النموذج القياسي المعتمد',
+    templateStepDesc: 'قم بتحميل النموذج، حيث يحتوي على أسماء الأقسام المعرفة مسبقاً وأمثلة توضيحية للبيانات.',
+    uploadStep: 'الخطوة 2: رفع الملف وتأكيد الاستيراد',
+    selectExcelFile: 'اختر أو اسحب ملف الإكسل هنا (.xlsx, .xls, .csv)',
+    importing: 'جاري قراءة ومعالجة الملف...',
+    startImportBtn: 'بدء الاستيراد والمعالجة',
+    chooseFile: 'تصفح الملفات',
+    fileSelected: 'الملف المحدد:',
+
     // Statuses & Types
     statusCompleted: 'مكتملة',
     statusInProgress: 'قيد التنفيذ',
@@ -65,6 +78,7 @@ export const translations = {
     taskDistribution: 'تكليف / ذاتي',
     statusBreakdown: 'توزيع حالات المهام',
     avgCompletion: 'معدل الإنجاز',
+    avgProgress: 'المعدل العام',
     deptPerformance: 'مقارنة أداء الكليات والأقسام',
     detailedFilteredTasks: 'السجل التفصيلي للمهام المصفاة',
     tasksVisible: '{count} مهمة ظاهرة',
@@ -111,7 +125,7 @@ export const translations = {
     attendanceSubtitle: 'متابعة إحداثيات الحضور الميداني لكوادر الكليات والأقسام وتأكيد التواجد داخل الحرم الجامعي',
 
     // Users Management
-    addUser: 'إضافة مستخدم / كادر جديد',
+    addUser: 'إضافة كادر جديد',
     userName: 'الاسم الكامل',
     jobTitle: 'المسمى الوظيفي / الأكاديمي',
     jobTitlePlaceholder: 'مثال: مدرس دكتور، مهندس شبكات، معيد، مسؤول مختبر...',
@@ -265,7 +279,6 @@ export const translations = {
     add: 'Add',
     confirm: 'Confirm',
     confirmDelete: 'Are you sure you want to delete?',
-    avgProgress: 'Average Rate',
     refresh: 'Refresh',
     filter: 'Filter',
     search: 'Search by name, title, or email...',
@@ -288,6 +301,20 @@ export const translations = {
     yourDepartment: 'Your Department',
     allDeptsLabel: 'All Faculties & Departments',
 
+    // Bulk Excel Import & Template
+    importExcel: 'Import from Excel',
+    downloadTemplate: 'Download Excel Template',
+    importModalTitle: 'Bulk Import Staff & Employees from Excel',
+    importModalSubtitle: 'Upload an Excel (.xlsx) or CSV file to bulk import and create staff accounts',
+    templateStep: 'Step 1: Download the official Excel template',
+    templateStepDesc: 'Download the pre-formatted template with active department references and sample data.',
+    uploadStep: 'Step 2: Upload your completed spreadsheet',
+    selectExcelFile: 'Choose or drag & drop Excel file (.xlsx, .xls, .csv)',
+    importing: 'Processing & importing staff...',
+    startImportBtn: 'Start Bulk Import',
+    chooseFile: 'Browse Files',
+    fileSelected: 'Selected File:',
+
     // Statuses & Types
     statusCompleted: 'Completed',
     statusInProgress: 'In Progress',
@@ -297,6 +324,7 @@ export const translations = {
     taskDistribution: 'Assigned vs Self-Reported',
     statusBreakdown: 'Task Status Breakdown',
     avgCompletion: 'Average Completion',
+    avgProgress: 'Average Rate',
     deptPerformance: 'Faculty & Department Performance',
     detailedFilteredTasks: 'Detailed Filtered Tasks Log',
     tasksVisible: '{count} visible tasks',
@@ -343,7 +371,7 @@ export const translations = {
     attendanceSubtitle: 'Real-time GPS tracking and campus presence verification for faculty and staff',
 
     // Users Management
-    addUser: 'Add New User / Staff',
+    addUser: 'Add New Staff',
     userName: 'Full Name',
     jobTitle: 'Job / Academic Title',
     jobTitlePlaceholder: 'e.g. Lecturer, Network Engineer, Lab Supervisor...',

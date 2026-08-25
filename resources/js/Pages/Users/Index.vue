@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -17,7 +17,13 @@ import {
   X,
   Mail,
   Lock,
-  Briefcase
+  Briefcase,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  Sparkles,
+  FileText,
+  AlertCircle
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -52,6 +58,15 @@ const userForm = useForm({
   role: 'employee',
   department_id: '',
   is_active: true,
+});
+
+// Bulk Excel Import State
+const isImportModalOpen = ref(false);
+const importFileRef = ref(null);
+const selectedFileName = ref('');
+
+const importForm = useForm({
+  file: null,
 });
 
 function applyFilters() {
@@ -114,14 +129,39 @@ function deleteUser(user) {
 function toggleStatus(user) {
   router.post(`/users/${user.id}/toggle-status`, {}, { preserveScroll: true });
 }
+
+function handleFileChange(event) {
+  const file = event.target.files[0];
+  if (file) {
+    importForm.file = file;
+    selectedFileName.value = file.name;
+  }
+}
+
+function triggerFileInput() {
+  importFileRef.value?.click();
+}
+
+function submitImport() {
+  if (!importForm.file) return;
+
+  importForm.post('/users/import', {
+    preserveScroll: true,
+    onSuccess: () => {
+      isImportModalOpen.value = false;
+      importForm.reset();
+      selectedFileName.value = '';
+    }
+  });
+}
 </script>
 
 <template>
   <Head :title="t('navUsers')" />
 
   <AppLayout>
-    <!-- Header with Add User Button -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <!-- Header with Action Buttons -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
           {{ t('navUsers') }}
@@ -131,14 +171,39 @@ function toggleStatus(user) {
         </p>
       </div>
 
-      <button
-        @click="openCreateModal"
-        type="button"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
-      >
-        <UserPlus class="w-4 h-4" />
-        <span>{{ t('addUser') }}</span>
-      </button>
+      <!-- Actions Strip -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Download Template Button -->
+        <a
+          href="/users/template"
+          target="_blank"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
+          :title="t('downloadTemplate')"
+        >
+          <Download class="w-4 h-4 text-sky-600 dark:text-sky-400" />
+          <span>{{ t('downloadTemplate') }}</span>
+        </a>
+
+        <!-- Import Excel Button -->
+        <button
+          @click="isImportModalOpen = true"
+          type="button"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span>{{ t('importExcel') }}</span>
+        </button>
+
+        <!-- Add Single User Button -->
+        <button
+          @click="openCreateModal"
+          type="button"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+        >
+          <UserPlus class="w-4 h-4" />
+          <span>{{ t('addUser') }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Filters Bar -->
@@ -161,7 +226,7 @@ function toggleStatus(user) {
 
         <!-- Role Filter -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('userRole') }}</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('role') }}</label>
           <select
             v-model="filterForm.role"
             @change="applyFilters"
@@ -176,7 +241,7 @@ function toggleStatus(user) {
 
         <!-- Department Filter -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('userDepartment') }}</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
           <select
             v-model="filterForm.department_id"
             @change="applyFilters"
@@ -188,6 +253,20 @@ function toggleStatus(user) {
             </option>
           </select>
         </div>
+
+        <!-- Stats Counter -->
+        <div class="flex items-end justify-between bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <div>
+            <div class="text-[10px] text-slate-400 font-semibold">{{ t('totalUsers') }}</div>
+            <div class="text-lg font-black text-slate-800 dark:text-slate-200 font-mono">{{ users.total || users.data.length }}</div>
+          </div>
+          <div class="text-end">
+            <div class="text-[10px] text-emerald-500 font-semibold">{{ t('activeUsers') }}</div>
+            <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              {{ users.data.filter(u => u.is_active).length }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -198,48 +277,41 @@ function toggleStatus(user) {
           <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
             <tr>
               <th class="px-5 py-4 text-start">{{ t('userName') }}</th>
-              <th class="px-5 py-4 text-start">{{ t('jobTitle') }}</th>
               <th class="px-5 py-4 text-start">{{ t('email') }}</th>
-              <th class="px-5 py-4 text-center">{{ t('userRole') }}</th>
-              <th class="px-5 py-4 text-start">{{ t('userDepartment') }}</th>
-              <th class="px-5 py-4 text-center">{{ t('userStatus') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('role') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('department') }}</th>
+              <th class="px-5 py-4 text-center">{{ t('status') }}</th>
               <th class="px-5 py-4 text-center">{{ t('actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-            <tr 
-              v-for="u in users.data" 
+            <tr
+              v-for="u in users.data"
               :key="u.id"
               class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
             >
-              <!-- Name -->
-              <td class="px-5 py-4 font-bold text-slate-900 dark:text-white">
-                {{ u.name }}
-              </td>
-
-              <!-- Job Title -->
-              <td class="px-5 py-4 text-slate-600 dark:text-slate-300 font-medium">
-                <span v-if="u.job_title" class="inline-flex items-center gap-1 text-sky-700 dark:text-sky-300 font-semibold bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded-md text-[11px]">
-                  <Briefcase class="w-3 h-3 text-sky-600" />
-                  <span>{{ u.job_title }}</span>
-                </span>
-                <span v-else class="text-slate-400">-</span>
+              <!-- Name & Job Title -->
+              <td class="px-5 py-4">
+                <div class="font-bold text-slate-900 dark:text-white">{{ u.name }}</div>
+                <div v-if="u.job_title" class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">
+                  {{ u.job_title }}
+                </div>
               </td>
 
               <!-- Email -->
-              <td class="px-5 py-4 text-slate-500 font-mono text-[11px]">
+              <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                 {{ u.email }}
               </td>
 
               <!-- Role Badge -->
-              <td class="px-5 py-4 text-center">
-                <span 
+              <td class="px-5 py-4">
+                <span
                   :class="{
-                    'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200': u.role === 'admin',
-                    'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border-sky-200': u.role === 'head',
-                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200': u.role === 'employee',
+                    'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60': u.role === 'admin',
+                    'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60': u.role === 'head',
+                    'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60': u.role === 'employee',
                   }"
-                  class="whitespace-nowrap inline-flex items-center justify-center text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0"
+                  class="whitespace-nowrap inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
                 >
                   {{ t(u.role + 'Role') }}
                 </span>
@@ -412,5 +484,119 @@ function toggleStatus(user) {
         </form>
       </div>
     </div>
+
+    <!-- Bulk Excel Import Modal -->
+    <div v-if="isImportModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="isImportModalOpen = false">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 sm:p-7 shadow-2xl relative" @click.stop>
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <FileSpreadsheet class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                {{ t('importModalTitle') }}
+              </h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">{{ t('importModalSubtitle') }}</p>
+            </div>
+          </div>
+          <button @click="isImportModalOpen = false" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <div class="space-y-5 text-xs">
+          <!-- Step 1: Download Template -->
+          <div class="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200/70 dark:border-sky-800/50">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-bold text-sky-900 dark:text-sky-200 text-xs">{{ t('templateStep') }}</div>
+                <p class="text-[11px] text-sky-700/80 dark:text-sky-300/80 mt-1 leading-relaxed">
+                  {{ t('templateStepDesc') }}
+                </p>
+              </div>
+              <a
+                href="/users/template"
+                target="_blank"
+                class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
+              >
+                <Download class="w-3.5 h-3.5" />
+                <span>{{ t('downloadTemplate') }}</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Step 2: Upload File -->
+          <form @submit.prevent="submitImport" class="space-y-4">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-2">
+                {{ t('uploadStep') }}
+              </label>
+
+              <!-- Hidden native file input -->
+              <input
+                ref="importFileRef"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                class="hidden"
+                @change="handleFileChange"
+              />
+
+              <!-- Drag & Drop / Click Zone -->
+              <div
+                @click="triggerFileInput"
+                class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-800/40"
+              >
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                  <Upload class="w-6 h-6" />
+                </div>
+                
+                <div v-if="selectedFileName" class="space-y-1">
+                  <div class="font-bold text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-center gap-1.5">
+                    <CheckCircle2 class="w-4 h-4" />
+                    <span>{{ t('fileSelected') }} {{ selectedFileName }}</span>
+                  </div>
+                  <p class="text-[10px] text-slate-400">انقر لتغيير الملف المرفوع</p>
+                </div>
+                <div v-else class="space-y-1">
+                  <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                    {{ t('selectExcelFile') }}
+                  </div>
+                  <p class="text-[10px] text-slate-400">XLSX, XLS, CSV (حتى 10MB)</p>
+                </div>
+              </div>
+
+              <div v-if="importForm.errors.file" class="mt-2 text-[11px] text-rose-500 font-semibold flex items-center gap-1">
+                <AlertCircle class="w-3.5 h-3.5" />
+                <span>{{ importForm.errors.file }}</span>
+              </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                @click="isImportModalOpen = false"
+                type="button"
+                class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer"
+              >
+                {{ t('cancel') }}
+              </button>
+              <button
+                :disabled="!importForm.file || importForm.processing"
+                type="submit"
+                class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-2"
+              >
+                <FileSpreadsheet class="w-4 h-4" />
+                <span>{{ importForm.processing ? t('importing') : t('startImportBtn') }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
   </AppLayout>
 </template>
