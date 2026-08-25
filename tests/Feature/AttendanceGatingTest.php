@@ -16,7 +16,7 @@ class AttendanceGatingTest extends TestCase
     public function test_employee_can_auto_log_gps_attendance(): void
     {
         $dept = Department::create([
-            'name' => 'قسم تكنولوجيا المعلومات',
+            'name' => 'قسم الحاسوب',
             'work_start_time' => '08:00:00',
             'work_end_time' => '16:00:00',
         ]);
@@ -85,6 +85,20 @@ class AttendanceGatingTest extends TestCase
             'latitude' => 33.31680,
             'longitude' => 44.36750,
         ]);
+    }
+
+    public function test_head_cannot_manually_update_location_since_restricted_to_admin(): void
+    {
+        $head = User::factory()->create(['role' => 'head']);
+        $target = User::factory()->create(['role' => 'employee']);
+
+        $response = $this->actingAs($head)->postJson('/attendance/manual-update', [
+            'user_id' => $target->id,
+            'latitude' => 33.31680,
+            'longitude' => 44.36750,
+        ]);
+
+        $response->assertStatus(403);
     }
 
     public function test_employee_cannot_manually_update_other_users_location(): void

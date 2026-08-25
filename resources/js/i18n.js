@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue';
+﻿import { reactive, computed } from 'vue';
 
 const savedLocale = typeof window !== 'undefined' ? localStorage.getItem('app_locale') || 'ar' : 'ar';
 
@@ -223,6 +223,7 @@ export const translations = {
     attendanceToday: 'حاضر اليوم',
     recentActivity: 'آخر الأنشطة والمهام المسجلة',
     viewAll: 'عرض الكل',
+    recentLocations: 'آخر المواقع المسجلة',
     noRecentTasks: 'لا توجد مهام مسجلة حديثاً',
     
     // Attendance Map
@@ -234,7 +235,7 @@ export const translations = {
     tableLogDate: 'التاريخ',
     noLogsFound: 'لا توجد سجلات حضور مسجلة لهذا التاريخ',
     manualPinBtn: 'تثبيت يدوي على الخريطة',
-    adminManualLocationTitle: 'تثبيت موقع موظف يدوياً (صلاحية الإدارة / رئيس القسم)',
+    adminManualLocationTitle: 'تثبيت موقع موظف يدوياً (صلاحية المدير العام فقط)',
     manualPinHint: 'انقر على الخريطة لتحديد الإحداثيات ثم اختر الموظف واضغط حفظ',
     targetEmployee: 'الموظف المستهدف',
     selectedCoordinates: 'الإحداثيات المختارة',
@@ -518,6 +519,7 @@ export const translations = {
     attendanceToday: 'Present Today',
     recentActivity: 'Recent Activity & Tasks',
     viewAll: 'View All',
+    recentLocations: 'Recent Locations',
     noRecentTasks: 'No recent tasks recorded',
     
     // Attendance Map
@@ -529,7 +531,7 @@ export const translations = {
     tableLogDate: 'Date',
     noLogsFound: 'No attendance logs found for this date',
     manualPinBtn: 'Manual Pin on Map',
-    adminManualLocationTitle: 'Manual Staff Location Pinning (Admin / Head)',
+    adminManualLocationTitle: 'Manual Staff Location Pinning (Admin Only)',
     manualPinHint: 'Click on map to pin coordinates, select staff member, and click save',
     targetEmployee: 'Target Employee',
     selectedCoordinates: 'Selected Coordinates',

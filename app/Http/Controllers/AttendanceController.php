@@ -73,7 +73,7 @@ class AttendanceController extends Controller
                 'user_id' => $userId,
                 'date' => $date,
             ],
-            'canManualEdit' => in_array($user->role, ['admin', 'head']),
+            'canManualEdit' => $user->role === 'admin',
             'allEmployees' => $employees,
             'stats' => [
                 'total_present_today' => AttendanceLog::whereDate('log_date', Carbon::today())->distinct('user_id')->count('user_id'),
@@ -115,8 +115,8 @@ class AttendanceController extends Controller
     public function manualUpdate(Request $request): JsonResponse
     {
         $admin = $request->user();
-        if (!in_array($admin->role, ['admin', 'head'])) {
-            return response()->json(['message' => 'غير مصرح لك بهذا الإجراء.'], 403);
+        if ($admin->role !== 'admin') {
+            return response()->json(['message' => 'غير مصرح لك بهذا الإجراء. هذه الصلاحية خاصة بالمدير العام فقط.'], 403);
         }
 
         $validated = $request->validate([
@@ -127,9 +127,6 @@ class AttendanceController extends Controller
         ]);
 
         $targetUser = User::findOrFail($validated['user_id']);
-        if ($admin->role === 'head' && $targetUser->department_id !== $admin->department_id) {
-            return response()->json(['message' => 'غير مصرح لك بتعديل موظفي الأقسام الأخرى.'], 403);
-        }
 
         $log = AttendanceLog::updateOrCreate(
             [
@@ -140,13 +137,13 @@ class AttendanceController extends Controller
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
                 'log_time' => Carbon::now()->toTimeString(),
-                'notes' => 'تثبيت يدوي من قبل الإدارة / رئيس القسم',
+                'notes' => 'تثبيت يدوي من قبل الإدارة العامة (Admin Manual Pin)',
             ]
         );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تثبيت الموقع الجغرافي للموظف بنجاح',
+            'message' => 'تم تثبيت وتحديث موقع الموظف بنجاح من قبل الإدارة',
             'log' => $log,
         ]);
     }
