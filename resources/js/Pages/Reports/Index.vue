@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import {
   FileBarChart,
   Calendar,
@@ -148,19 +149,14 @@ function exportPdf() {
   <Head :title="t('navReports')" />
 
   <AppLayout>
-    <!-- Header & Actions -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ t('navReports') }}
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {{ t('reportsSubtitle') }}
-        </p>
-      </div>
-
-      <!-- Export Action Group -->
-      <div class="flex items-center gap-2">
+    <!-- Unified Page Banner -->
+    <PageBanner
+      :title="t('navReports')"
+      :subtitle="t('reportsSubtitle')"
+      :badge="t('reportSummary') + ': ' + totalRecords + ' ' + t('totalRecordsCount')"
+      :icon="BarChart3"
+    >
+      <template #actions>
         <!-- Excel Export Button -->
         <button
           @click="exportExcel"
@@ -180,8 +176,8 @@ function exportPdf() {
           <Printer class="w-4 h-4" />
           <span>{{ t('printReportPdf') }}</span>
         </button>
-      </div>
-    </div>
+      </template>
+    </PageBanner>
 
     <!-- Quick Date Presets Bar with Dynamic Highlight Selection -->
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">

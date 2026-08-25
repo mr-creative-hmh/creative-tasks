@@ -64,12 +64,12 @@ function addSelfTask() {
   <Head :title="t('employeeTitle')" />
 
   <AppLayout>
-    <div class="max-w-3xl mx-auto w-full space-y-5">
+    <div class="w-full max-w-5xl mx-auto space-y-5">
       <!-- GPS & Shift Gate Banner -->
       <LocationGateModal :required="true" />
 
       <!-- Daily Performance KPI Card -->
-      <div class="bg-gradient-to-br from-sky-700 via-sky-800 to-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-sky-900/20 relative overflow-hidden">
+      <div class="bg-accent-gradient rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-sky-900/20 relative overflow-hidden">
         <div class="absolute -end-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
         
         <div class="flex items-center justify-between gap-3 relative z-10">

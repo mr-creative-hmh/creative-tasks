@@ -5,6 +5,7 @@ import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AttendanceMap from '@/Components/AttendanceMap.vue';
 import Pagination from '@/Components/Pagination.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import axios from 'axios';
 import {
   MapPin,

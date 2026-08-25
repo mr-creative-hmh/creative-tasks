@@ -1,7 +1,8 @@
-<script setup>
+﻿<script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import {
   CheckSquare,
   Clock,
@@ -45,25 +46,32 @@ defineProps({
   <Head :title="t('navDashboard')" />
 
   <AppLayout>
-    <!-- Top Welcome Banner -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-700 via-sky-800 to-teal-800 text-white p-6 sm:p-8 shadow-md shadow-sky-500/15 mb-6">
-      <div class="relative z-10 max-w-2xl">
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/20 backdrop-blur-md mb-3 border border-white/20">
-          <Sparkles class="w-3.5 h-3.5" />
-          <span>{{ t('appSubtitle') }}</span>
+    <!-- Unified Page Banner -->
+    <PageBanner
+      :title="t('appName')"
+      :subtitle="t('dashboardSubtitle')"
+      :badge="t('appSubtitle')"
+      :icon="TrendingUp"
+    >
+      <template #actions>
+        <div class="flex items-center gap-2">
+          <Link
+            href="/tasks"
+            class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent active:scale-95 transition-all cursor-pointer"
+          >
+            <CheckSquare class="w-4 h-4" />
+            <span>{{ t('navTasks') }}</span>
+          </Link>
+          <Link
+            href="/attendance"
+            class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+          >
+            <MapPin class="w-4 h-4 text-accent" />
+            <span>{{ t('navAttendance') }}</span>
+          </Link>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-          {{ t('appName') }}
-        </h1>
-        <p class="text-xs sm:text-sm text-sky-100/90 mt-1 leading-relaxed">
-          {{ t('dashboardSubtitle') }}
-        </p>
-      </div>
-
-      <!-- Ambient Glow Shapes -->
-      <div class="absolute -top-16 -end-16 w-64 h-64 bg-teal-400/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-16 -start-16 w-64 h-64 bg-sky-400/20 rounded-full blur-3xl pointer-events-none"></div>
-    </div>
+      </template>
+    </PageBanner>
 
     <!-- Quick Stats Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

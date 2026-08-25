@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import {
   Building2,
   Plus,
@@ -79,26 +80,24 @@ function deleteDept(dept) {
   <Head :title="t('navDepartments')" />
 
   <AppLayout>
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ t('navDepartments') }}
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {{ t('departmentsSubtitle') }}
-        </p>
-      </div>
-
-      <button
-        @click="openCreateModal"
-        type="button"
-        class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
-      >
-        <Plus class="w-4 h-4" />
-        <span>{{ t('addDepartment') }}</span>
-      </button>
-    </div>
+    <!-- Unified Page Banner -->
+    <PageBanner
+      :title="t('navDepartments')"
+      :subtitle="t('departmentsSubtitle')"
+      :badge="t('totalDepts') + ': ' + departments.length"
+      :icon="Building2"
+    >
+      <template #actions>
+        <button
+          @click="openCreateModal"
+          type="button"
+          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer"
+        >
+          <Plus class="w-4 h-4" />
+          <span>{{ t('addDepartment') }}</span>
+        </button>
+      </template>
+    </PageBanner>
 
     <!-- Departments Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

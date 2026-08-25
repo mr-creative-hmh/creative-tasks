@@ -5,6 +5,7 @@ import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import AccentPicker from '@/Components/AccentPicker.vue';
 import {
   User,
   KeyRound,
@@ -75,10 +76,10 @@ function updatePassword() {
   <Head :title="t('navProfile')" />
 
   <AppLayout>
-    <div class="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
+    <div class="w-full space-y-4 sm:space-y-6">
       
       <!-- Top Profile Banner Card -->
-      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-600 via-sky-700 to-teal-700 text-white p-4 sm:p-6 shadow-md shadow-sky-500/15">
+      <div class="relative overflow-hidden rounded-3xl bg-accent-gradient text-white p-4 sm:p-6 shadow-md shadow-sky-500/15">
         <!-- Ambient Glow Decoration -->
         <div class="absolute -top-12 -left-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 

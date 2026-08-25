@@ -4,6 +4,7 @@ import { Link, usePage, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import AccentPicker from '@/Components/AccentPicker.vue';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -230,6 +231,7 @@ function logout() {
         <div class="flex items-center justify-between gap-2 px-1">
           <span class="text-[10px] font-semibold text-slate-400">{{ t('preferences') }}</span>
           <div class="flex items-center gap-1.5">
+            <AccentPicker />
             <ThemeToggle />
             <LanguageToggle />
           </div>
@@ -267,6 +269,7 @@ function logout() {
 
         <!-- Right Controls & Hamburger Drawer Trigger -->
         <div class="flex items-center gap-1.5 shrink-0">
+          <AccentPicker />
           <ThemeToggle />
           <LanguageToggle />
           <button
@@ -368,7 +371,7 @@ function logout() {
     <!-- ========================================================= -->
     <!-- 3. MAIN CONTENT AREA (Responsive Container)               -->
     <!-- ========================================================= -->
-    <main class="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto w-full">
       <!-- Flash Alert Feedback Messages -->
       <div v-if="page.props.flash?.success" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -384,7 +387,7 @@ function logout() {
 
       <!-- Universal Designer / Creator Credit Footer -->
       <footer class="mt-12 pt-6 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl mx-auto px-2">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 w-full px-2">
           <div class="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
             <GraduationCap class="w-4 h-4 text-sky-600 dark:text-sky-400" />
             <span>{{ t('appName') }}</span>

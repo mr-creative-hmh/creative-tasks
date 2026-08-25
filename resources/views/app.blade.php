@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="ar" dir="rtl" class="dark" data-accent="sky">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Language & Theme Initializer (Anti-FOUC & Persistence across F5) -->
+    <!-- Language, Theme & Accent Initializer (Anti-FOUC & Persistence across F5) -->
     <script>
         (function() {
             // Theme initialization
@@ -30,6 +30,10 @@
             const savedLocale = localStorage.getItem('app_locale') || 'ar';
             document.documentElement.lang = savedLocale;
             document.documentElement.dir = savedLocale === 'ar' ? 'rtl' : 'ltr';
+
+            // Accent Palette initialization
+            const savedAccent = localStorage.getItem('app_accent') || 'sky';
+            document.documentElement.setAttribute('data-accent', savedAccent);
         })();
     </script>
 

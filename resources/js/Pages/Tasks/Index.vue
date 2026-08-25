@@ -4,6 +4,7 @@ import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import {
   CheckSquare,
   Plus,

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
+import AccentPicker from '@/Components/AccentPicker.vue';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import {
   GraduationCap,
@@ -56,6 +57,7 @@ function fillDemo(email, password) {
           </div>
         </div>
         <div class="flex items-center gap-2">
+          <AccentPicker />
           <ThemeToggle />
           <LanguageToggle />
         </div>

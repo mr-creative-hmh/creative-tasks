@@ -1,9 +1,10 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue';
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import PageBanner from '@/Components/PageBanner.vue';
 import {
   Users,
   UserPlus,
@@ -165,19 +166,14 @@ function submitImport() {
   <Head :title="t('navUsers')" />
 
   <AppLayout>
-    <!-- Header with Action Buttons -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ t('navUsers') }}
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {{ t('usersSubtitle') }}
-        </p>
-      </div>
-
-      <!-- Unified Action Buttons -->
-      <div class="flex flex-wrap items-center gap-2">
+    <!-- Unified Page Banner -->
+    <PageBanner
+      :title="t('navUsers')"
+      :subtitle="t('usersSubtitle')"
+      :badge="t('totalUsers') + ': ' + (users.total || users.data.length)"
+      :icon="Users"
+    >
+      <template #actions>
         <!-- Download Template Button -->
         <a
           href="/users/template"
@@ -185,7 +181,7 @@ function submitImport() {
           class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
           :title="t('downloadTemplate')"
         >
-          <Download class="w-4 h-4 text-sky-600 dark:text-sky-400" />
+          <Download class="w-4 h-4 text-accent" />
           <span>{{ t('downloadTemplate') }}</span>
         </a>
 
@@ -203,13 +199,13 @@ function submitImport() {
         <button
           @click="openCreateModal"
           type="button"
-          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer"
         >
           <UserPlus class="w-4 h-4" />
           <span>{{ t('addUser') }}</span>
         </button>
-      </div>
-    </div>
+      </template>
+    </PageBanner>
 
     <!-- Filters Bar -->
     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs mb-6">
