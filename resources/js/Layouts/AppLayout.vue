@@ -26,7 +26,8 @@ import {
   AlertTriangle,
   Layers,
   Settings,
-  Shield
+  Shield,
+  Palette
 } from 'lucide-vue-next';
 
 const isMobileMenuOpen = ref(false);
@@ -201,31 +202,8 @@ onMounted(() => {
         </Link>
       </div>
 
-      <!-- Department Shift & Attendance Badge (Live Status Pill) -->
-      <div v-if="activeDepartment" class="mx-4 mt-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs">
-        <div class="flex items-center justify-between gap-1 mb-1.5">
-          <span class="font-bold text-slate-700 dark:text-slate-200 truncate">{{ activeDepartment?.name }}</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 font-mono font-semibold">
-            {{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}
-          </span>
-        </div>
-
-        <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
-          <div v-if="todayAttendance" class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            <span>{{ t('present') }} ({{ todayAttendance.log_time }})</span>
-          </div>
-          <div v-else class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold">
-            <AlertTriangle class="w-3.5 h-3.5 animate-pulse" />
-            <span>{{ t('gpsWaiting') }}</span>
-          </div>
-          
-          <span class="text-[10px] text-slate-400 font-mono">{{ t('today') }}</span>
-        </div>
-      </div>
-
-      <!-- Navigation Links -->
-      <div class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <!-- Clean Navigation Links -->
+      <div class="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
         <div class="px-3 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
           {{ t('navDashboard') }}
         </div>
@@ -250,7 +228,7 @@ onMounted(() => {
         </Link>
       </div>
 
-      <!-- Sidebar Footer (Preferences, Profile Card & Logout) -->
+      <!-- Clean Sidebar Footer (User Profile Card & Logout ONLY) -->
       <div class="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
         <!-- User Info Strip -->
         <Link
@@ -268,16 +246,6 @@ onMounted(() => {
           </div>
         </Link>
 
-        <!-- Controls Toolbar (GPS Indicator, Theme & Language) with placement="top" -->
-        <div class="flex items-center justify-between gap-1.5 px-1">
-          <GpsLiveIndicator placement="top" />
-          <div class="flex items-center gap-1.5">
-            <AccentPicker placement="top" />
-            <ThemeToggle />
-            <LanguageToggle />
-          </div>
-        </div>
-
         <!-- Logout Button -->
         <button
           @click="logout"
@@ -291,33 +259,31 @@ onMounted(() => {
     </aside>
 
     <!-- ========================================================= -->
-    <!-- 2. MOBILE APP TOP HEADER (< md screens)                   -->
+    <!-- 2. MOBILE APP TOP HEADER (< md screens) - ULTRA CLEAN     -->
     <!-- ========================================================= -->
-    <header class="md:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 transition-colors duration-200">
+    <header class="md:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 transition-colors duration-200">
       <div class="flex items-center justify-between gap-2">
         <!-- University Logo & Brand -->
-        <Link href="/" class="flex items-center gap-2 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20 shrink-0">
-            <GraduationCap class="w-5 h-5" />
+        <Link href="/" class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20 shrink-0">
+            <GraduationCap class="w-4 h-4" />
           </div>
           <div class="min-w-0">
             <div class="text-xs font-black text-slate-900 dark:text-white leading-none tracking-tight">{{ t('appName') }}</div>
             <div class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5 truncate">
-              {{ authUser?.name }}{{ authUser?.job_title ? ` (${authUser.job_title})` : '' }}
+              {{ authUser?.name }}
             </div>
           </div>
         </Link>
 
-        <!-- Right Controls (Easy to Reach) & Hamburger Drawer Trigger -->
-        <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Minimal Header Right (GPS Status Indicator & Drawer Hamburger ONLY) -->
+        <div class="flex items-center gap-2 shrink-0">
           <GpsLiveIndicator placement="bottom" />
-          <AccentPicker placement="bottom" />
-          <ThemeToggle />
-          <LanguageToggle />
           <button
             @click="isMobileMenuOpen = !isMobileMenuOpen"
             type="button"
-            class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            aria-label="Menu"
           >
             <Menu v-if="!isMobileMenuOpen" class="w-4 h-4" />
             <X v-else class="w-4 h-4" />
@@ -326,18 +292,18 @@ onMounted(() => {
       </div>
 
       <!-- Campus Shift & Attendance Pill Strip on Mobile -->
-      <div v-if="activeDepartment" class="mt-2.5 flex flex-wrap items-center justify-between gap-1.5 text-[11px] bg-slate-50 dark:bg-slate-950/70 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800/80">
-        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-          <Clock class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-          <span>{{ t('shiftHours') }}: {{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}</span>
+      <div v-if="activeDepartment" class="mt-2 flex flex-wrap items-center justify-between gap-1.5 text-[10px] bg-slate-50 dark:bg-slate-950/70 px-2.5 py-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+          <Clock class="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
+          <span>{{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}</span>
         </div>
 
-        <div v-if="todayAttendance" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/40">
+        <div v-if="todayAttendance" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
           <CheckCircle2 class="w-3 h-3" />
-          <span>{{ t('present') }} ({{ todayAttendance.log_time }})</span>
+          <span>{{ todayAttendance.log_time }}</span>
         </div>
-        <div v-else class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
-          <AlertTriangle class="w-3 h-3" />
+        <div v-else class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+          <AlertTriangle class="w-3 h-3 animate-pulse" />
           <span>{{ t('gpsWaiting') }}</span>
         </div>
       </div>
@@ -350,21 +316,21 @@ onMounted(() => {
       @click="isMobileMenuOpen = false"
     >
       <div
-        class="w-72 bg-white dark:bg-slate-900 h-full p-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 animate-slide-in"
+        class="w-72 bg-white dark:bg-slate-900 h-full p-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 animate-slide-in overflow-y-auto"
         @click.stop
       >
         <div class="space-y-4">
           <!-- Drawer Header -->
           <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-xs">
+            <Link href="/profile" @click="isMobileMenuOpen = false" class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                 {{ authUser?.name ? authUser.name.charAt(0) : 'U' }}
               </div>
               <div class="min-w-0">
                 <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ authUser?.name }}</div>
                 <div class="text-[10px] text-slate-400 truncate">{{ authUser?.email }}</div>
               </div>
-            </div>
+            </Link>
             <button @click="isMobileMenuOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
               <X class="w-4 h-4" />
             </button>
@@ -388,14 +354,39 @@ onMounted(() => {
               <span>{{ mItem.name }}</span>
             </Link>
           </nav>
+
+          <!-- Drawer Settings & Preferences Section -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              {{ t('systemPreferences') }}
+            </div>
+
+            <!-- Theme Toggle Row -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('themeMode') }}</span>
+              <ThemeToggle />
+            </div>
+
+            <!-- Language Toggle Row -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('languagePref') }}</span>
+              <LanguageToggle />
+            </div>
+
+            <!-- Accent Color Picker Row -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ t('accentColor') }}</span>
+              <AccentPicker placement="bottom" />
+            </div>
+          </div>
         </div>
 
         <!-- Drawer Footer -->
-        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
           <button
             @click="logout"
             type="button"
-            class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40"
+            class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
           >
             <LogOut class="w-4 h-4" />
             <span>{{ t('logout') }}</span>
@@ -409,8 +400,8 @@ onMounted(() => {
     <!-- ========================================================= -->
     <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
       
-      <!-- Top Desktop Header Bar (Always in reach on Desktop/Laptop) -->
-      <header class="hidden md:flex items-center justify-between px-6 lg:px-8 py-3.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-20 transition-colors">
+      <!-- Top Desktop Header Bar (Always easily reachable on Desktop) -->
+      <header class="hidden md:flex items-center justify-between px-6 lg:px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-20 transition-colors">
         <!-- Left Breadcrumb / Department Badge -->
         <div class="flex items-center gap-3">
           <div v-if="activeDepartment" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold border border-slate-200/60 dark:border-slate-700/60">
@@ -427,7 +418,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Right Quick Action Toolbar (GPS, Accent, Theme, Lang, User) -->
+        <!-- Right Action Toolbar (GPS, Accent, Theme, Lang, User) -->
         <div class="flex items-center gap-2">
           <GpsLiveIndicator placement="bottom" />
           <AccentPicker placement="bottom" />
