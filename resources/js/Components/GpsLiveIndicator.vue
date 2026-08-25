@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { gpsState } from '@/Services/gpsTracker';
+import { gpsState, syncCurrentGpsLocation } from '@/Services/gpsTracker';
 import { t } from '@/i18n';
 import {
   Radio,
@@ -24,24 +24,7 @@ const props = defineProps({
 const isOpen = ref(false);
 
 function triggerManualSync() {
-  if (navigator.geolocation) {
-    gpsState.isSyncing = true;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        gpsState.latitude = pos.coords.latitude;
-        gpsState.longitude = pos.coords.longitude;
-        gpsState.accuracy = Math.round(pos.coords.accuracy);
-        gpsState.lastSyncTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        gpsState.isVerified = true;
-        gpsState.isSyncing = false;
-      },
-      (err) => {
-        gpsState.isSyncing = false;
-        gpsState.error = err.message || t('connectionFailed');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }
+  syncCurrentGpsLocation();
 }
 </script>
 
@@ -139,7 +122,7 @@ function triggerManualSync() {
             :class="gpsState.isVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'"
             class="font-black text-[11px]"
           >
-            {{ gpsState.isVerified ? t('gpsVerified') : t('gpsSearching') }}
+            {{ gpsState.isVerified ? t('gpsVerified') : (gpsState.isSyncing ? t('gpsSyncing') : t('gpsSearching')) }}
           </span>
         </div>
 

@@ -1,5 +1,6 @@
 import { reactive } from 'vue';
 import axios from 'axios';
+import { t } from '@/i18n';
 
 export const gpsState = reactive({
   isTracking: false,
@@ -23,21 +24,21 @@ let isInitialized = false;
 function calculateDistance(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
   const R = 6371e3; // Earth radius in meters
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const radLat1 = (lat1 * Math.PI) / 180;
+  const radLat2 = (lat2 * Math.PI) / 180;
 
   const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(radLat1) * Math.cos(radLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c; // Distance in meters
 }
 
 // Send coordinates to server silently
-async function sendCoordinates(lat, lng, accuracy = null) {
+export async function sendCoordinates(lat, lng, accuracy = null) {
   if (!navigator.onLine) {
     queueOffline(lat, lng, accuracy);
     return;
@@ -64,6 +65,7 @@ async function sendCoordinates(lat, lng, accuracy = null) {
     gpsState.latitude = lat;
     gpsState.longitude = lng;
     gpsState.accuracy = accuracy ? Math.round(accuracy) : null;
+    gpsState.error = null;
 
     // Dispatch global event for live maps to re-center or plot
     if (typeof window !== 'undefined') {
@@ -74,7 +76,7 @@ async function sendCoordinates(lat, lng, accuracy = null) {
       );
     }
   } catch (err) {
-    gpsState.error = err.response?.data?.message || 'Error syncing GPS location';
+    gpsState.error = err.response?.data?.message || t('connectionFailed');
   } finally {
     gpsState.isSyncing = false;
   }
@@ -133,6 +135,7 @@ function handlePosition(position) {
   gpsState.longitude = longitude;
   gpsState.accuracy = Math.round(accuracy);
   gpsState.isTracking = true;
+  gpsState.error = null;
 
   // Trigger server sync if:
   // 1. Never synced before, OR
@@ -147,32 +150,93 @@ function handlePosition(position) {
   }
 }
 
-function handleError(error) {
-  switch (error.code) {
-    case error.PERMISSION_DENIED:
-      gpsState.error = 'تم رفض إذن الوصول للموقع الجغرافي (GPS Denied)';
-      break;
-    case error.POSITION_UNAVAILABLE:
-      gpsState.error = 'إشارة الـ GPS غير متوفرة حالياً';
-      break;
-    case error.TIMEOUT:
-      gpsState.error = 'انتهت مهلة قراءة الموقع الجغرافي';
-      break;
-    default:
-      gpsState.error = 'تعذر قراءة الموقع الجغرافي';
+// Resilient Geolocation Resolver: Tries high accuracy first, then seamlessly falls back to standard accuracy
+export function resolveCurrentPosition(onSuccess, onError) {
+  if (typeof window === 'undefined' || !navigator.geolocation) {
+    if (onError) onError(new Error(t('gpsError')));
+    return;
   }
-  gpsState.isTracking = false;
+
+  // Attempt 1: High Accuracy with reasonable timeout
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      onSuccess(pos);
+    },
+    (err) => {
+      // If timed out or unavailable, automatically fall back to standard/network accuracy
+      console.warn('High accuracy GPS timed out or unavailable, falling back to standard accuracy:', err.message);
+      
+      navigator.geolocation.getCurrentPosition(
+        (fallbackPos) => {
+          onSuccess(fallbackPos);
+        },
+        (finalErr) => {
+          if (onError) onError(finalErr);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 300000, // Accept cached location up to 5 minutes old
+        }
+      );
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 6000, // 6 seconds before fallback
+      maximumAge: 60000,
+    }
+  );
+}
+
+// Manual One-Click Sync Action with Fallback & Server Update
+export async function syncCurrentGpsLocation() {
+  gpsState.isSyncing = true;
+  gpsState.error = null;
+
+  resolveCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      await sendCoordinates(latitude, longitude, accuracy);
+    },
+    (err) => {
+      gpsState.isSyncing = false;
+      if (err.code === 1) {
+        gpsState.error = 'تم رفض الإذن للوصول للموقع (Permission Denied)';
+      } else if (err.code === 2) {
+        gpsState.error = 'إشارة الموقع غير متوفرة حالياً (Position Unavailable)';
+      } else if (err.code === 3) {
+        gpsState.error = 'انتهت مهلة استجابة الـ GPS (Timeout Expired)';
+      } else {
+        gpsState.error = err.message || t('gpsError');
+      }
+    }
+  );
+}
+
+function handleError(error) {
+  // If watchPosition encounters a timeout, don't crash the UI; gracefully try standard fix
+  if (error.code === 3) {
+    resolveCurrentPosition(handlePosition, null);
+    return;
+  }
+
+  if (error.code === 1) {
+    gpsState.error = 'تم رفض إذن الوصول للموقع (GPS Permission Denied)';
+  } else if (error.code === 2) {
+    gpsState.error = 'إشارة الـ GPS غير متوفرة';
+  } else {
+    gpsState.error = t('gpsError');
+  }
 }
 
 // Initialize Global Invisible Background GPS Tracker
 export function initGlobalGpsTracker() {
   if (typeof window === 'undefined' || !navigator.geolocation) {
-    gpsState.error = 'المتصفح لا يدعم خدمة تحديد الموقع الجغرافي';
+    gpsState.error = 'المتصفح لا يدعم التحديد الجغرافي';
     return;
   }
 
   if (isInitialized) {
-    // Flush offline queue if needed
     flushOfflineQueue();
     return;
   }
@@ -183,28 +247,20 @@ export function initGlobalGpsTracker() {
   // Listen to online events to flush offline backlog
   window.addEventListener('online', flushOfflineQueue);
 
-  // 1. Initial One-shot immediate sync
-  navigator.geolocation.getCurrentPosition(handlePosition, handleError, {
-    enableHighAccuracy: true,
-    timeout: 15000,
-    maximumAge: 5000,
-  });
+  // 1. Initial immediate sync using resilient resolver
+  resolveCurrentPosition(handlePosition, handleError);
 
-  // 2. High-precision continuous watchPosition
+  // 2. Continuous watchPosition
   watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
     enableHighAccuracy: true,
-    timeout: 25000,
-    maximumAge: 10000,
+    timeout: 20000,
+    maximumAge: 30000,
   });
 
   // 3. Heartbeat interval every 2 minutes for stationary presence keepalive
   intervalId = setInterval(() => {
     if (navigator.geolocation && gpsState.isTracking) {
-      navigator.geolocation.getCurrentPosition(handlePosition, handleError, {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 60000,
-      });
+      resolveCurrentPosition(handlePosition, null);
     }
   }, 120000);
 }
