@@ -1,58 +1,116 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🎓 منظومة جامعة المأمون لإدارة ومتابعة المهام والحضور الميداني
+### Al-Ma'moon University College — Academic & Field Task Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+## 🌟 نظرة عامة على المشروع (Project Overview)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+منظومة برمجية متطورة مصممة خصيصاً لـ **جامعة المأمون (بغداد - العراق)** لمتابعة وإدارة المهام اليومية الموكلة والذاتية للكوادر الأكاديمية، الإدارية، والهندسية، مع التحقق الميداني التلقائي عبر نظام تحديد المواقع الجغرافية (GPS)، وإلزامية التواجد داخل الحرم الجامعي، ومتابعة ساعات الدوام الرسمي للأقسام، وإصدار تقارير أداء دورية ورسوم بيانية تفاعلية مع تصدير بصيغتي **PDF الرسمية المعتمدة** و **Excel (UTF-8)**.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- 🌐 **رابط المعاينة على Laravel Herd:** [http://almamon-tasks.test](http://almamon-tasks.test)
+- 🌐 **المستودع الأساسي:** [http://creative-tasks.test](http://creative-tasks.test)
+- 🐙 **مستودع GitHub لجامعة المأمون:** [https://github.com/mr-creative-hmh/almamon-tasks.git](https://github.com/mr-creative-hmh/almamon-tasks.git)
+- 🐙 **مستودع GitHub العام:** [https://github.com/mr-creative-hmh/creative-tasks.git](https://github.com/mr-creative-hmh/creative-tasks.git)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🚀 المكدس التقني (Tech Stack)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Backend:** Laravel 13 (Inertia.js Controllers & REST APIs)
+- **Frontend:** Vue 3 (Composition API `<script setup>`) + Inertia.js
+- **Styling:** Tailwind CSS v4 مع نظام ألوان مخصص وهوية جامعية ملكية
+- **Maps:** Leaflet.js + OpenStreetMap (تحديد وتتبع جغرافي حي)
+- **Exporting:** DomPDF (تقارير PDF الرسمية) + CSV/Excel Streams مع دعم كامل للغة العربية (UTF-8 BOM)
+- **State & Theme:** Vue Reactive Store مع حفظ التفضيلات في `localStorage` ومضاد للوميض (Anti-FOUC)
+- **Database:** SQLite / MySQL / PostgreSQL
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## ✨ المميزات الرئيسية للمنظومة (Key Features)
 
-## Agentic Development
+### 🛰️ 1. التحقق والتتبع الجغرافي الإجباري (Mandatory GPS Attendance)
+- **استشعار تلقائي بالكامل:** فور فتح الموظف للمنظومة على الهاتف أو المتصفح، يتم التقاط إحداثيات الـ GPS وتأكيد تواجده داخل الحرم الجامعي وحفظ الحضور بالثانية تلقائياً.
+- **شاشة قفل إجبارية (Strict Lock Screen):** لا يمكن استخدام المنظومة أو تعديل المهام ما لم يتم السماح بالـ GPS وتأكيد التواجد الميداني لليوم.
+- **مزامنة صامتة في الخلفية (Background Sync):** تحديث دوري للإحداثيات كل 3 دقائق أثناء العمل.
+- **تعديل الموقع يدوياً من الخريطة (Admin Map Pin Editor):** ميزة حصرية للمشرف بالنقر المباشر فوق أي موقع على الخريطة وسحب الدبوس لتثبيت موقع أي موظف يدوياً.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 📋 2. إدارة وتكليف المهام وسلايدر الإنجاز السريع (Task Management)
+- **تكليف الكوادر:** تكليف رسمي من العمادة ورؤساء الأقسام مع تحديد القسم، التاريخ، والتوجيهات.
+- **سلايدر تفاعلي مباشر (Live 0-100% Slider):** تحريك شريط الإنجاز يُحدّث النسبة فورياً في الخادم، ويقوم بمزامنة حالة المهمة تلقائياً:
+  - `0%` ⬅️ **معلقة (Pending)**
+  - `1% - 99%` ⬅️ **قيد التنفيذ (In Progress)**
+  - `100%` ⬅️ **مكتملة (Completed)**
+- **تسجيل الأعمال الذاتية في سطر واحد:** للمهام الميدانية السريعة والإنجازات اليومية.
+
+### 📊 3. التحليلات والتقارير الشاملة (Extensive Reports & Analytics)
+- **فلاتر متعددة الأبعاد:** فلترة سريعة (اليوم، هذا الأسبوع، هذا الشهر، هذا العام، مخصص)، حسب الكلية، الموظف، الحالة، ونوع التكليف.
+- **رسوم بيانية تفاعلية (SVG Charts):**
+  - مخطط حلقي (Donut Chart) لتوزيع حالات المهام ونسب الإنجاز.
+  - مخطط شريطي لمقارنة أداء الكليات والأقسام المؤسسية.
+  - لوحة شرف إنجاز الكوادر والموظفين (Performance Leaderboard).
+- **سحب تقرير رسمي PDF معتمد:** وثيقة رسمية بترويسة جامعة المأمون، الجداول التفصيلية، وصناديق التوقيع والاعتماد والختم.
+- **تصدير إكسل Excel:** ملف متوافق مع كافة برامج الجداول الحسابية مع دعم الترميز العربي UTF-8.
+
+### 👥 4. إدارة المستخدمين والأقسام وساعات الدوام (Users & Shifts Management)
+- إضافة وتعديل وتفعيل وتعطيل الكوادر والمستخدمين بنقرة واحدة.
+- مصفوفة صلاحيات دقيقة (`admin` لرئاسة الجامعة، `head` لرؤساء الأقسام، `employee` للكوادر الميدانية والأكاديمية).
+- ضبط ساعات بداية ونهاية الدوام الرسمي لكل كلية وتنبيه الموظف إذا كان خارج أوقات الدوام.
+
+### 🌓 5. الوضع الليلي والنهاري ودعم ثنائي اللغة (Dark/Light & Bilingual)
+- دعم كامل ومتكامل للغتين العربية والإنجليزية مع قلب اتجاه العرض تلقائياً (RTL / LTR).
+- نمط ليلي فخم (Dark Mode) ونهاري نظيف (Light Mode) متوافق مع Tailwind CSS v4 بدون أي وميض.
+
+---
+
+## 🔑 بيانات الدخول التجريبية (Demo Accounts)
+
+| الحساب | البريد الإلكتروني | كلمة المرور | الدور والصلاحية |
+| :--- | :--- | :--- | :--- |
+| **رئاسة الجامعة (Super Admin)** | `admin@almamonuc.edu.iq` | `password` | إدارة كاملة، تقارير، مستخدمين، أقسام، خريطة |
+| **رئيس قسم تكنولوجيا المعلومات (Head)** | `head.it@almamonuc.edu.iq` | `password` | تكليف ومتابعة كادر قسم تكنولوجيا المعلومات |
+| **مسؤول المتابعة والأمن (Head)** | `head.security@almamonuc.edu.iq` | `password` | متابعة الجولات الميدانية والأمن الجامعي |
+| **مهندس شبكات ميداني (Staff)** | `ali.it@almamonuc.edu.iq` | `password` | مهام PWA، شريط الإنجاز، تسجيل الحضور التلقائي |
+
+---
+
+## 🛠️ التثبيت والتشغيل المحلي (Local Setup)
 
 ```bash
-composer require laravel/boost --dev
+# 1. الدخول لمجلد المشروع
+cd C:\Users\hasan\Herd\almamon-tasks
 
-php artisan boost:install
+# 2. تثبيت الحزم البرمجية
+composer install
+npm install
+
+# 3. تهيئة ملف الإعدادات وقاعدة البيانات
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+
+# 4. بناء ملفات الواجهة الأمامية
+npm run build
+
+# 5. تشغيل الاختبارات الآلية
+php vendor/bin/phpunit
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🧪 الاختبارات الآلية (Automated Testing)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+يتضمن المشروع حزمة متكاملة من 27 اختباراً آلياً تغطي كافة المسارات والوظائف:
+- `tests/Feature/AuthTest.php` (المصادقة وتسجيل الدخول وتبديل اللغات)
+- `tests/Feature/AttendanceGatingTest.php` (التحقق الجغرافي التلقائي، القفل، والتعديل اليدوي للمشرف)
+- `tests/Feature/TaskManagementTest.php` (تكليف المهام، تعديل الإنجاز، ومزامنة الحالة)
+- `tests/Feature/DepartmentAndReportTest.php` (الأقسام، التقارير، تصدير الـ PDF والإكسل)
+- `tests/Feature/UserAndProfileTest.php` (إدارة المستخدمين، الصلاحيات، وتحديث الملف الشخصي)
 
-## Code of Conduct
+**نتيجة التشغيل:** `Tests: 27 passed, Assertions: 63`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 📄 التوثيق الرسمي
+للحصول على الشرح المفصل، راجع ملف التوثيق المرفق: [`DOCUMENTATION.md`](DOCUMENTATION.md).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**جامعة المأمون • بغداد، جمهورية العراق © 2026**

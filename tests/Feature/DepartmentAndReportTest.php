@@ -57,6 +57,26 @@ class DepartmentAndReportTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
+    public function test_admin_can_export_excel_report(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $dept = Department::create(['name' => 'قسم تكنولوجيا المعلومات']);
+        Task::create([
+            'department_id' => $dept->id,
+            'user_id' => $admin->id,
+            'title' => 'تقرير إكسل تجريبي',
+            'progress' => 80,
+            'task_type' => 'assigned',
+            'status' => 'in_progress',
+            'task_date' => Carbon::today()->toDateString(),
+        ]);
+
+        $response = $this->actingAs($admin)->get('/reports/excel?date_from=2026-01-01&date_to=2026-12-31');
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('text/csv', $response->headers->get('content-type'));
+    }
+
     public function test_employee_cannot_access_reports(): void
     {
         $employee = User::factory()->create(['role' => 'employee']);

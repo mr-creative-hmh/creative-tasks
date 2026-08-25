@@ -59,9 +59,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::post('/attendance/manual-update', [AttendanceController::class, 'manualUpdate'])->name('attendance.manual-update');
 
-        // Periodic Performance Reports & PDF Export
+        // Periodic Performance Reports & PDF + Excel Export
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
+        Route::get('/reports/excel', [ReportController::class, 'exportExcel'])->name('reports.excel');
     });
 
     // Admin-Only Routes (Departments & Users Management)
