@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import {
   Users,
   UserPlus,
@@ -29,7 +30,7 @@ import {
 const props = defineProps({
   users: {
     type: Object,
-    default: () => ({ data: [] })
+    default: () => ({ data: [], links: [] })
   },
   departments: {
     type: Array,
@@ -40,6 +41,9 @@ const props = defineProps({
     default: () => ({})
   }
 });
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user || {});
 
 const filterForm = ref({
   search: props.filters.search || '',
@@ -121,6 +125,7 @@ function submitUser() {
 }
 
 function deleteUser(user) {
+  if (user.id === authUser.value.id) return;
   if (confirm(t('confirmDeleteUser'))) {
     router.delete(`/users/${user.id}`, { preserveScroll: true });
   }
@@ -171,13 +176,13 @@ function submitImport() {
         </p>
       </div>
 
-      <!-- Actions Strip -->
+      <!-- Unified Action Buttons -->
       <div class="flex flex-wrap items-center gap-2">
         <!-- Download Template Button -->
         <a
           href="/users/template"
           target="_blank"
-          class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
           :title="t('downloadTemplate')"
         >
           <Download class="w-4 h-4 text-sky-600 dark:text-sky-400" />
@@ -188,7 +193,7 @@ function submitImport() {
         <button
           @click="isImportModalOpen = true"
           type="button"
-          class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
         >
           <FileSpreadsheet class="w-4 h-4" />
           <span>{{ t('importExcel') }}</span>
@@ -198,7 +203,7 @@ function submitImport() {
         <button
           @click="openCreateModal"
           type="button"
-          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
         >
           <UserPlus class="w-4 h-4" />
           <span>{{ t('addUser') }}</span>
@@ -218,9 +223,9 @@ function submitImport() {
               @input="applyFilters"
               type="text"
               :placeholder="t('search')"
-              class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-8 pe-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+              class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-9 pe-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
             />
-            <Search class="w-3.5 h-3.5 text-slate-400 absolute start-2.5 top-2.5" />
+            <Search class="w-4 h-4 text-slate-400 absolute start-3 top-3" />
           </div>
         </div>
 
@@ -230,7 +235,7 @@ function submitImport() {
           <select
             v-model="filterForm.role"
             @change="applyFilters"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+            class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
           >
             <option value="">{{ t('allRoles') }}</option>
             <option value="admin">{{ t('adminRole') }}</option>
@@ -245,7 +250,7 @@ function submitImport() {
           <select
             v-model="filterForm.department_id"
             @change="applyFilters"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+            class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
           >
             <option value="">{{ t('allDepartments') }}</option>
             <option v-for="dept in departments" :key="dept.id" :value="dept.id">
@@ -255,22 +260,22 @@ function submitImport() {
         </div>
 
         <!-- Stats Counter -->
-        <div class="flex items-end justify-between bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+        <div class="h-10 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-3 rounded-xl border border-slate-100 dark:border-slate-800 self-end">
           <div>
-            <div class="text-[10px] text-slate-400 font-semibold">{{ t('totalUsers') }}</div>
-            <div class="text-lg font-black text-slate-800 dark:text-slate-200 font-mono">{{ users.total || users.data.length }}</div>
+            <span class="text-[10px] text-slate-400 font-semibold">{{ t('totalUsers') }}:</span>
+            <span class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono ms-1">{{ users.total || users.data.length }}</span>
           </div>
           <div class="text-end">
-            <div class="text-[10px] text-emerald-500 font-semibold">{{ t('activeUsers') }}</div>
-            <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+            <span class="text-[10px] text-emerald-500 font-semibold">{{ t('activeUsers') }}:</span>
+            <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono ms-1">
               {{ users.data.filter(u => u.is_active).length }}
-            </div>
+            </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Users Table -->
+    <!-- Users Table Container -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-start text-xs">
@@ -336,31 +341,56 @@ function submitImport() {
                 </button>
               </td>
 
-              <!-- Actions -->
+              <!-- Actions (Cannot delete self) -->
               <td class="px-5 py-4 text-center">
-                <div class="inline-flex items-center gap-1">
+                <div class="inline-flex items-center gap-1.5">
                   <button
                     @click="openEditModal(u)"
                     type="button"
-                    class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer"
+                    class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
                     :title="t('edit')"
                   >
                     <Edit2 class="w-4 h-4" />
                   </button>
+
+                  <!-- Delete Button ONLY if not current logged-in user -->
                   <button
+                    v-if="u.id !== authUser.id"
                     @click="deleteUser(u)"
                     type="button"
-                    class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer"
+                    class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer transition-colors"
                     :title="t('delete')"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
+
+                  <span
+                    v-else
+                    class="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/60 text-[10px] font-bold text-sky-600 dark:text-sky-400 select-none"
+                    :title="t('cannotDeleteSelf')"
+                  >
+                    {{ t('cannotDeleteSelf') }}
+                  </span>
                 </div>
+              </td>
+            </tr>
+
+            <tr v-if="users.data.length === 0">
+              <td colspan="6" class="py-12 text-center text-slate-400">
+                {{ t('noTasksFound') }}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Component -->
+      <Pagination
+        :links="users.links"
+        :from="users.from"
+        :to="users.to"
+        :total="users.total"
+      />
     </div>
 
     <!-- Create / Edit User Modal -->
@@ -383,7 +413,7 @@ function submitImport() {
               v-model="userForm.name"
               type="text"
               required
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
             />
           </div>
 
@@ -394,7 +424,7 @@ function submitImport() {
               v-model="userForm.job_title"
               type="text"
               :placeholder="t('jobTitlePlaceholder')"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
             />
           </div>
 
@@ -405,7 +435,7 @@ function submitImport() {
               v-model="userForm.email"
               type="email"
               required
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
             />
           </div>
 
@@ -419,7 +449,7 @@ function submitImport() {
               type="password"
               :required="!editingUser"
               placeholder="••••••••"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
             />
           </div>
 
@@ -429,7 +459,7 @@ function submitImport() {
             <select
               v-model="userForm.role"
               required
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
             >
               <option value="employee">{{ t('employeeRole') }}</option>
               <option value="head">{{ t('headRole') }}</option>
@@ -442,7 +472,7 @@ function submitImport() {
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userDepartment') }}</label>
             <select
               v-model="userForm.department_id"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
             >
               <option value="">{{ t('selectDept') }}</option>
               <option v-for="dept in departments" :key="dept.id" :value="dept.id">
@@ -469,14 +499,14 @@ function submitImport() {
             <button
               @click="isModalOpen = false"
               type="button"
-              class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer"
+              class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
               {{ t('cancel') }}
             </button>
             <button
               :disabled="userForm.processing"
               type="submit"
-              class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-sm disabled:opacity-50 cursor-pointer transition-all"
+              class="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer transition-all flex items-center justify-center"
             >
               {{ userForm.processing ? t('saving') : t('save') }}
             </button>
@@ -520,7 +550,7 @@ function submitImport() {
               <a
                 href="/users/template"
                 target="_blank"
-                class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
+                class="shrink-0 h-9 inline-flex items-center gap-1.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
               >
                 <Download class="w-3.5 h-3.5" />
                 <span>{{ t('downloadTemplate') }}</span>
@@ -579,14 +609,14 @@ function submitImport() {
               <button
                 @click="isImportModalOpen = false"
                 type="button"
-                class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer"
+                class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 {{ t('cancel') }}
               </button>
               <button
                 :disabled="!importForm.file || importForm.processing"
                 type="submit"
-                class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-2"
+                class="h-10 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 cursor-pointer transition-all flex items-center gap-2"
               >
                 <FileSpreadsheet class="w-4 h-4" />
                 <span>{{ importForm.processing ? t('importing') : t('startImportBtn') }}</span>

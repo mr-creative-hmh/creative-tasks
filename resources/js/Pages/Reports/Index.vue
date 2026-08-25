@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -165,7 +165,7 @@ function exportPdf() {
         <button
           @click="exportExcel"
           type="button"
-          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
         >
           <FileSpreadsheet class="w-4 h-4" />
           <span>{{ t('exportExcel') }}</span>
@@ -175,7 +175,7 @@ function exportPdf() {
         <button
           @click="exportPdf"
           type="button"
-          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-95 text-white font-bold text-xs shadow-md shadow-rose-600/25 transition-all cursor-pointer"
+          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition-all cursor-pointer"
         >
           <Printer class="w-4 h-4" />
           <span>{{ t('printReportPdf') }}</span>

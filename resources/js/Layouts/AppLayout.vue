@@ -382,6 +382,24 @@ function logout() {
 
       <slot />
 
+      <!-- Universal Designer / Creator Credit Footer -->
+      <footer class="mt-12 pt-6 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl mx-auto px-2">
+          <div class="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
+            <GraduationCap class="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span>{{ t('appName') }}</span>
+            <span class="text-slate-300 dark:text-slate-700">•</span>
+            <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ t('systemSignature') }}</span>
+          </div>
+
+          <div class="text-[11px] flex items-center gap-1.5 font-medium">
+            <span class="text-sky-600 dark:text-sky-400 font-bold">{{ t('creatorCredit') }}</span>
+            <span class="text-slate-300 dark:text-slate-700">•</span>
+            <span class="font-mono text-slate-400 dark:text-slate-500">{{ t('allRightsReserved', { year: new Date().getFullYear() }) }}</span>
+          </div>
+        </div>
+      </footer>
+
       <!-- Bottom Spacer for Mobile so content is never blocked by Bottom Bar -->
       <div class="h-24 md:hidden w-full shrink-0" aria-hidden="true"></div>
     </main>

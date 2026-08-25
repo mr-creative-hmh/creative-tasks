@@ -138,7 +138,7 @@ function updatePassword() {
                 v-model="profileForm.name"
                 type="text"
                 required
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
               />
               <span v-if="profileForm.errors.name" class="text-rose-500 text-[10px] mt-1">{{ profileForm.errors.name }}</span>
             </div>
@@ -150,7 +150,7 @@ function updatePassword() {
                 v-model="profileForm.job_title"
                 type="text"
                 :placeholder="t('jobTitlePlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 text-xs transition-colors"
               />
               <span v-if="profileForm.errors.job_title" class="text-rose-500 text-[10px] mt-1">{{ profileForm.errors.job_title }}</span>
             </div>
@@ -162,7 +162,7 @@ function updatePassword() {
                 v-model="profileForm.email"
                 type="email"
                 required
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono text-xs transition-colors"
               />
               <span v-if="profileForm.errors.email" class="text-rose-500 text-[10px] mt-1">{{ profileForm.errors.email }}</span>
             </div>
@@ -171,7 +171,7 @@ function updatePassword() {
               <button
                 :disabled="profileForm.processing"
                 type="submit"
-                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-500/20 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                class="w-full sm:w-auto h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-600/25 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Save class="w-3.5 h-3.5" />
                 <span>{{ profileForm.processing ? t('saving') : t('save') }}</span>
@@ -200,7 +200,7 @@ function updatePassword() {
                 type="password"
                 required
                 placeholder="••••••••"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
               />
               <span v-if="passwordForm.errors.current_password" class="text-rose-500 text-[10px] mt-1">{{ passwordForm.errors.current_password }}</span>
             </div>
@@ -212,7 +212,7 @@ function updatePassword() {
                 type="password"
                 required
                 placeholder="••••••••"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
               />
               <span v-if="passwordForm.errors.password" class="text-rose-500 text-[10px] mt-1">{{ passwordForm.errors.password }}</span>
             </div>
@@ -224,7 +224,7 @@ function updatePassword() {
                 type="password"
                 required
                 placeholder="••••••••"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
+                class="w-full px-3.5 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border font-medium border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 text-xs transition-colors"
               />
             </div>
 

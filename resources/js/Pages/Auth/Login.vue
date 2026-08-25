@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -170,8 +170,11 @@ function fillDemo(email, password) {
       </div>
 
       <!-- Footer info -->
-      <div class="text-center mt-6 text-xs text-slate-400 dark:text-slate-500">
-        {{ t('footerCopyright') }} • {{ new Date().getFullYear() }}
+            <!-- Footer info with Creator Credit -->
+      <div class="text-center mt-8 text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
+        <div class="font-bold text-slate-700 dark:text-slate-300">{{ t('appName') }} • {{ t('systemSignature') }}</div>
+        <div class="text-[11px] font-bold text-sky-600 dark:text-sky-400">{{ t('creatorCredit') }}</div>
+        <div class="text-[10px] text-slate-400 font-mono">{{ t('allRightsReserved', { year: new Date().getFullYear() }) }}</div>
       </div>
     </div>
   </div>

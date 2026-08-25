@@ -160,12 +160,12 @@ function addSelfTask() {
                 type="text"
                 required
                 :placeholder="t('quickAddPlaceholder')"
-                class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
+                class="flex-1 h-10 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all font-medium"
               />
               <button
                 :disabled="selfReportForm.processing || !selfReportForm.title.trim()"
                 type="submit"
-                class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-sky-500/20 disabled:opacity-50 shrink-0 cursor-pointer"
+                class="h-10 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-sky-600/25 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 <Plus class="w-4 h-4" />
                 <span>{{ t('add') }}</span>

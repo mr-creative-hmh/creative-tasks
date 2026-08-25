@@ -1,9 +1,10 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AttendanceMap from '@/Components/AttendanceMap.vue';
+import Pagination from '@/Components/Pagination.vue';
 import axios from 'axios';
 import {
   MapPin,
@@ -164,6 +165,14 @@ async function saveManualAttendance() {
             <ChevronDown v-else class="w-3.5 h-3.5" />
           </button>
         </div>
+
+        <!-- Pagination Bar -->
+        <Pagination
+          :links="logs.links"
+          :from="logs.from"
+          :to="logs.to"
+          :total="logs.total"
+        />
       </div>
 
       <!-- 2. Admin / Head Manual Pinning Drawer Card -->
@@ -242,6 +251,14 @@ async function saveManualAttendance() {
           <AlertCircle class="w-4 h-4 shrink-0" />
           <span>{{ manualErrorMsg }}</span>
         </div>
+
+        <!-- Pagination Bar -->
+        <Pagination
+          :links="logs.links"
+          :from="logs.from"
+          :to="logs.to"
+          :total="logs.total"
+        />
       </div>
 
       <!-- 3. Dynamic Filter Bar -->
@@ -288,6 +305,14 @@ async function saveManualAttendance() {
             />
           </div>
         </div>
+
+        <!-- Pagination Bar -->
+        <Pagination
+          :links="logs.links"
+          :from="logs.from"
+          :to="logs.to"
+          :total="logs.total"
+        />
       </div>
 
       <!-- 4. Interactive Live Map Section -->
@@ -319,6 +344,14 @@ async function saveManualAttendance() {
             @select-coordinates="onMapCoordinateSelected"
           />
         </div>
+
+        <!-- Pagination Bar -->
+        <Pagination
+          :links="logs.links"
+          :from="logs.from"
+          :to="logs.to"
+          :total="logs.total"
+        />
       </div>
 
       <!-- 5. Attendance Records Table (Desktop) & Cards (Mobile) -->
@@ -447,6 +480,14 @@ async function saveManualAttendance() {
             {{ t('noLogsFound') }}
           </div>
         </div>
+
+        <!-- Pagination Bar -->
+        <Pagination
+          :links="logs.links"
+          :from="logs.from"
+          :to="logs.to"
+          :total="logs.total"
+        />
       </div>
 
     </div>

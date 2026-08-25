@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import {
   CheckSquare,
   Plus,
@@ -377,6 +378,14 @@ function deleteTask(task) {
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Component -->
+      <Pagination
+        :links="tasks.links"
+        :from="tasks.from"
+        :to="tasks.to"
+        :total="tasks.total"
+      />
     </div>
 
     <!-- Create / Edit Modal with Cascading Department Filter -->

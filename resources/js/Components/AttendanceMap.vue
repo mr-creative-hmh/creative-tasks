@@ -1,6 +1,8 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { i18nState, t } from '@/i18n';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const props = defineProps({
   points: {
@@ -28,31 +30,40 @@ let manualMarker = null;
 const defaultLat = 33.31524;
 const defaultLng = 44.36612;
 
-function initMap() {
-  if (!mapContainer.value || typeof window === 'undefined') return;
+function getLeaflet() {
+  return (typeof window !== 'undefined' && window.L) ? window.L : L;
+}
 
-  if (!window.L) {
+function initMap() {
+  if (!mapContainer.value) return;
+
+  const leafletInstance = getLeaflet();
+  if (!leafletInstance) {
     console.error('Leaflet is not loaded');
     return;
   }
 
-  const L = window.L;
+  // If already initialized, remove old map
+  if (map) {
+    map.remove();
+    map = null;
+  }
 
   // Initialize Map
-  map = L.map(mapContainer.value, {
+  map = leafletInstance.map(mapContainer.value, {
     zoomControl: true,
     attributionControl: false
-  }).setView([defaultLat, defaultLng], 14);
+  }).setView([defaultLat, defaultLng], 15);
 
   // Modern Clean CartoDB Voyager Tile Layer
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  leafletInstance.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
   }).addTo(map);
 
-  markersLayer = L.layerGroup().addTo(map);
+  markersLayer = leafletInstance.layerGroup().addTo(map);
 
-  // Add Campus Geofence Boundary (Demo visual circle for Al-Ma'moon University)
-  L.circle([defaultLat, defaultLng], {
+  // Add Campus Geofence Boundary (Circle for Al-Ma'moon University Campus)
+  leafletInstance.circle([defaultLat, defaultLng], {
     color: '#0284c7',
     fillColor: '#38bdf8',
     fillOpacity: 0.15,
@@ -74,29 +85,36 @@ function initMap() {
   if (props.selectedCoords && props.selectedCoords.latitude) {
     setManualPin(props.selectedCoords.latitude, props.selectedCoords.longitude);
   }
+
+  // Trigger resize to prevent grey tiles
+  setTimeout(() => {
+    map?.invalidateSize();
+  }, 300);
 }
 
 function setManualPin(lat, lng) {
-  if (!map || !window.L) return;
-  const L = window.L;
+  if (!map) return;
+  const leafletInstance = getLeaflet();
+  if (!leafletInstance) return;
 
   if (manualMarker) {
-    markersLayer.removeLayer(manualMarker);
+    markersLayer?.removeLayer(manualMarker);
   }
 
-  const pinIcon = L.divIcon({
+  const pinIcon = leafletInstance.divIcon({
     className: 'custom-manual-pin',
-    html: `<div style="background-color: #f43f5e; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(244,63,94,0.6); animation: bounce 1s infinite alternate;"></div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11]
+    html: `<div style="background-color: #f43f5e; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 12px rgba(244,63,94,0.7); animation: bounce 1s infinite alternate; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">📍</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   });
 
-  manualMarker = L.marker([lat, lng], { icon: pinIcon }).addTo(markersLayer);
+  manualMarker = leafletInstance.marker([lat, lng], { icon: pinIcon }).addTo(markersLayer);
 }
 
 function renderMarkers() {
-  if (!map || !markersLayer || !window.L) return;
-  const L = window.L;
+  if (!map || !markersLayer) return;
+  const leafletInstance = getLeaflet();
+  if (!leafletInstance) return;
 
   markersLayer.clearLayers();
 
@@ -107,7 +125,7 @@ function renderMarkers() {
       const latLng = [point.latitude, point.longitude];
       latLngs.push(latLng);
 
-      const customIcon = L.divIcon({
+      const customIcon = leafletInstance.divIcon({
         className: 'custom-map-marker',
         html: `
           <div style="
@@ -122,7 +140,7 @@ function renderMarkers() {
             font-weight: bold;
             font-size: 11px;
             border: 2px solid #ffffff;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
           ">
             ${point.user_name ? point.user_name.substring(0, 1) : 'U'}
           </div>
@@ -131,7 +149,7 @@ function renderMarkers() {
         iconAnchor: [16, 16]
       });
 
-      const marker = L.marker(latLng, { icon: customIcon }).addTo(markersLayer);
+      const marker = leafletInstance.marker(latLng, { icon: customIcon }).addTo(markersLayer);
       const isRtl = i18nState.locale === 'ar';
       
       const popupContent = `
@@ -153,7 +171,7 @@ function renderMarkers() {
   });
 
   if (latLngs.length > 0 && !props.selectedCoords) {
-    const bounds = L.latLngBounds(latLngs);
+    const bounds = leafletInstance.latLngBounds(latLngs);
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
   }
 }
@@ -170,12 +188,14 @@ watch(() => props.selectedCoords, (newCoords) => {
 }, { deep: true });
 
 onMounted(() => {
-  initMap();
+  nextTick(() => {
+    initMap();
+  });
 });
 </script>
 
 <template>
-  <div class="relative w-full h-[450px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
+  <div class="relative w-full h-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xs">
     <div ref="mapContainer" class="w-full h-full z-0"></div>
     
     <!-- Map Instructions overlay for Admin -->

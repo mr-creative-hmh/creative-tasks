@@ -93,7 +93,7 @@ function deleteDept(dept) {
       <button
         @click="openCreateModal"
         type="button"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer"
+        class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
       >
         <Plus class="w-4 h-4" />
         <span>{{ t('addDepartment') }}</span>

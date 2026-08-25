@@ -54,6 +54,13 @@ export const translations = {
     googleMaps: 'خرائط Google',
     yourDepartment: 'قسمك المعتمد',
     allDeptsLabel: 'كافة الكليات والأقسام',
+    showingEntries: 'عرض {from} إلى {to} من أصل {total} سجل',
+    previous: 'السابق',
+    next: 'التالي',
+    creatorCredit: 'برمجة وتطوير: م. حسن محمد حسن',
+    allRightsReserved: 'جامعة المأمون • كافة الحقوق محفوظة © {year}',
+    cannotDeleteSelf: 'حسابك الحالي',
+    systemSignature: 'نظام إدارة ومتابعة المهام والحضور الميداني',
 
     // Bulk Excel Import & Template
     importExcel: 'استيراد من إكسل',
@@ -300,6 +307,13 @@ export const translations = {
     googleMaps: 'Google Maps',
     yourDepartment: 'Your Department',
     allDeptsLabel: 'All Faculties & Departments',
+    showingEntries: 'Showing {from} to {to} of {total} entries',
+    previous: 'Previous',
+    next: 'Next',
+    creatorCredit: 'Developed by: Eng. Hasan Mohammed Hasan',
+    allRightsReserved: 'Al-Ma\'moon University • All rights reserved © {year}',
+    cannotDeleteSelf: 'Current Account',
+    systemSignature: 'Task & Attendance Field Management System',
 
     // Bulk Excel Import & Template
     importExcel: 'Import from Excel',
