@@ -9,6 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\User;
 use App\Models\Department;
+use App\Models\AttendanceLog;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -68,14 +70,34 @@ class UserController extends Controller
             'role' => ['required', 'in:admin,head,employee'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'is_active' => ['boolean'],
+            'attendance_mode' => ['nullable', 'in:gps,fixed'],
+            'fixed_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'fixed_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'fixed_location_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $validated['is_active'] ?? true;
+        $validated['attendance_mode'] = $validated['attendance_mode'] ?? 'gps';
 
-        User::create($validated);
+        $user = User::create($validated);
 
-        return back()->with('success', 'تم إضافة المستخدم بنجاح.');
+        if ($user->attendance_mode === 'fixed') {
+            AttendanceLog::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'log_date' => Carbon::today()->toDateString(),
+                ],
+                [
+                    'latitude' => $user->fixed_latitude ?? 33.31524,
+                    'longitude' => $user->fixed_longitude ?? 44.36612,
+                    'log_time' => Carbon::now()->toTimeString(),
+                    'notes' => 'حضور مكتبي ثابت معتمد: ' . ($user->fixed_location_name ?? 'مقر الحرم الجامعي'),
+                ]
+            );
+        }
+
+        return back()->with('success', 'تمت إضافة الكادر بنجاح.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -88,6 +110,10 @@ class UserController extends Controller
             'role' => ['required', 'in:admin,head,employee'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'is_active' => ['boolean'],
+            'attendance_mode' => ['nullable', 'in:gps,fixed'],
+            'fixed_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'fixed_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'fixed_location_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         if (!empty($validated['password'])) {
@@ -98,26 +124,59 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return back()->with('success', 'تم تحديث بيانات المستخدم بنجاح.');
-    }
-
-    public function destroy(Request $request, User $user): RedirectResponse
-    {
-        if ($user->id === $request->user()->id) {
-            return back()->with('error', 'لا يمكنك حذف حسابك الحالي.');
+        if ($user->attendance_mode === 'fixed') {
+            AttendanceLog::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'log_date' => Carbon::today()->toDateString(),
+                ],
+                [
+                    'latitude' => $user->fixed_latitude ?? 33.31524,
+                    'longitude' => $user->fixed_longitude ?? 44.36612,
+                    'log_time' => Carbon::now()->toTimeString(),
+                    'notes' => 'حضور مكتبي ثابت معتمد: ' . ($user->fixed_location_name ?? 'مقر الحرم الجامعي'),
+                ]
+            );
         }
 
-        $user->delete();
-
-        return back()->with('success', 'تم حذف المستخدم بنجاح.');
+        return back()->with('success', 'تم تحديث بيانات الكادر بنجاح.');
     }
 
-    public function toggleStatus(User $user): RedirectResponse
+    public function setLocationSettings(Request $request, User $user): RedirectResponse
     {
-        $user->update(['is_active' => !$user->is_active]);
+        $validated = $request->validate([
+            'attendance_mode' => ['required', 'in:gps,fixed'],
+            'fixed_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'fixed_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'fixed_location_name' => ['nullable', 'string', 'max:255'],
+        ]);
 
-        $msg = $user->is_active ? 'تم تفعيل حساب المستخدم.' : 'تم تعطيل حساب المستخدم.';
-        return back()->with('success', $msg);
+        if ($validated['attendance_mode'] === 'fixed') {
+            if (empty($validated['fixed_latitude']) || empty($validated['fixed_longitude'])) {
+                $validated['fixed_latitude'] = 33.31524;
+                $validated['fixed_longitude'] = 44.36612;
+            }
+            if (empty($validated['fixed_location_name'])) {
+                $validated['fixed_location_name'] = $user->department?->name ? 'مقر ' . $user->department->name : 'مقر الحرم الجامعي';
+            }
+
+            AttendanceLog::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'log_date' => Carbon::today()->toDateString(),
+                ],
+                [
+                    'latitude' => $validated['fixed_latitude'],
+                    'longitude' => $validated['fixed_longitude'],
+                    'log_time' => Carbon::now()->toTimeString(),
+                    'notes' => 'حضور مكتبي ثابت معتمد: ' . $validated['fixed_location_name'],
+                ]
+            );
+        }
+
+        $user->update($validated);
+
+        return back()->with('success', 'تم تحديث نمط وإعدادات الموقع الجغرافي للموظف بنجاح.');
     }
 
     public function resetPassword(Request $request, User $user): RedirectResponse
@@ -127,86 +186,90 @@ class UserController extends Controller
         ]);
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'password' => Hash::make($validated['password']),
         ]);
 
-        return back()->with('success', 'تم إعادة تعيين كلمة المرور بنجاح للمستخدم: ' . $user->name);
+        return back()->with('success', 'تمت إعادة تعيين كلمة المرور للمستخدم بنجاح.');
     }
 
-    /**
-     * Download an official Excel template pre-populated with active departments and instructions.
-     */
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', 'لا يمكنك حذف حسابك الشخصي الحالي.');
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'تم حذف الكادر بنجاح.');
+    }
+
+    public function toggleStatus(User $user): RedirectResponse
+    {
+        $user->update(['is_active' => !$user->is_active]);
+
+        $msg = $user->is_active ? 'تم تفعيل حساب المستخدم بنجاح.' : 'تم تعطيل حساب المستخدم بنجاح.';
+        return back()->with('success', $msg);
+    }
+
     public function downloadTemplate(): StreamedResponse
     {
         $spreadsheet = new Spreadsheet();
-
-        // --- Sheet 1: Staff Data Input ---
+        
+        // --- Sheet 1: Main Template ---
         $sheet1 = $spreadsheet->getActiveSheet();
-        $sheet1->setTitle('بيانات الكوادر (Staff Data)');
+        $sheet1->setTitle('بيانات الكوادر (Staff)');
         $sheet1->setRightToLeft(true);
 
-        // Title Header
-        $sheet1->setCellValue('A1', 'جامعة المأمون - نموذج استيراد الكوادر والموظفين (Staff Import Template)');
+        $sheet1->setCellValue('A1', 'نموذج استيراد بيانات الكوادر والتدريسيين - جامعة المأمون');
         $sheet1->mergeCells('A1:F1');
         $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0284C7'));
         $sheet1->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Instructions note
-        $sheet1->setCellValue('A2', 'ملاحظات: الحقول بعلامة (*) إلزامية | كلمة المرور الافتراضية ستكون (password) إذا تركت فارغة | راجع ورقة (الأقسام المتاحة) لأسماء الأقسام المعرفة');
+        $sheet1->setCellValue('A2', 'ملاحظة: يرجى كتابة اسم القسم تماماً كما هو مسجل في ورقة (الأقسام المعتمدة). الحقول المطلوبة: الاسم، البريد، الصلاحية.');
         $sheet1->mergeCells('A2:F2');
-        $sheet1->getStyle('A2')->getFont()->setSize(9)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
+        $sheet1->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet1->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Table Columns
         $headers = [
-            'A4' => 'الاسم الكامل * (Full Name)',
-            'B4' => 'البريد الجامعي الإلكتروني * (Email)',
-            'C4' => 'المسمى الوظيفي أو الأكاديمي (Job Title)',
-            'D4' => 'الكلية أو القسم (Department)',
-            'E4' => 'الدور والصلاحية (Role)',
-            'F4' => 'كلمة المرور (Password - Optional)',
+            'A4' => 'الاسم الرباعي واللقب * (Full Name)',
+            'B4' => 'البريد الإلكتروني الجامعي * (Email)',
+            'C4' => 'المسمى الوظيفي / الرتبة (Job Title)',
+            'D4' => 'اسم القسم أو الكلية (Department Name)',
+            'E4' => 'الصلاحية * (Role: admin, head, employee)',
+            'F4' => 'كلمة المرور الابتدائية (Default Password)',
         ];
 
         foreach ($headers as $cell => $text) {
             $sheet1->setCellValue($cell, $text);
         }
 
-        $headerStyle = [
+        $sheet1->getStyle('A4:F4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF0369A1']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFCBD5E1']]],
-        ];
-        $sheet1->getStyle('A4:F4')->applyFromArray($headerStyle);
+        ]);
         $sheet1->getRowDimension(4)->setRowHeight(28);
 
-        // Sample Rows
-        $sampleDepartments = Department::pluck('name')->toArray();
-        $sampleDept1 = $sampleDepartments[0] ?? 'قسم علوم الحاسوب';
-        $sampleDept2 = $sampleDepartments[1] ?? 'كلية القانون';
-        $sampleDept3 = $sampleDepartments[2] ?? 'قسم الشبكات والاتصالات';
-
         $samples = [
-            ['د. مصطفى العبيدي', 'm.obaidi@almamonuc.edu.iq', 'أستاذ دكتور', $sampleDept1, 'رئيس قسم (head)', 'password'],
-            ['م. زينب حميد حسن', 'z.hameed@almamonuc.edu.iq', 'مدرس مساعد / مهندسة برمجيات', $sampleDept1, 'كادر (employee)', 'password'],
-            ['علي حسين كاظم', 'a.hussain@almamonuc.edu.iq', 'مسؤول مختبر حاسوب', $sampleDept2, 'كادر (employee)', 'password'],
-            ['سارة طارق مهدي', 's.tareq@almamonuc.edu.iq', 'باحثة أكاديمية', $sampleDept3, 'كادر (employee)', 'password'],
+            ['د. علي حسين مكي', 'ali.maki@almamonuc.edu.iq', 'أستاذ دكتور', 'قسم علوم الحاسوب', 'head', 'Mamon@2026'],
+            ['م. مريم صادق كريم', 'maryam.s@almamonuc.edu.iq', 'مدرس مساعد', 'قسم هندسة تقنيات الحاسوب', 'employee', 'Mamon@2026'],
+            ['حيدر كاظم عبيد', 'haider.k@almamonuc.edu.iq', 'مهندس برمجيات', 'قسم شؤون الطلبة والتسجيل', 'employee', 'Mamon@2026'],
         ];
 
         $row = 5;
-        foreach ($samples as $item) {
-            $sheet1->setCellValue("A{$row}", $item[0]);
-            $sheet1->setCellValue("B{$row}", $item[1]);
-            $sheet1->setCellValue("C{$row}", $item[2]);
-            $sheet1->setCellValue("D{$row}", $item[3]);
-            $sheet1->setCellValue("E{$row}", $item[4]);
-            $sheet1->setCellValue("F{$row}", $item[5]);
+        foreach ($samples as $sample) {
+            $sheet1->setCellValue("A{$row}", $sample[0]);
+            $sheet1->setCellValue("B{$row}", $sample[1]);
+            $sheet1->setCellValue("C{$row}", $sample[2]);
+            $sheet1->setCellValue("D{$row}", $sample[3]);
+            $sheet1->setCellValue("E{$row}", $sample[4]);
+            $sheet1->setCellValue("F{$row}", $sample[5]);
 
-            $rowStyle = [
+            $sheet1->getStyle("A{$row}:F{$row}")->applyFromArray([
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE2E8F0']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-            ];
-            $sheet1->getStyle("A{$row}:F{$row}")->applyFromArray($rowStyle);
+            ]);
             $sheet1->getRowDimension($row)->setRowHeight(22);
             $row++;
         }
@@ -217,19 +280,19 @@ class UserController extends Controller
 
         // --- Sheet 2: Reference of Existing Departments ---
         $sheet2 = $spreadsheet->createSheet();
-        $sheet2->setTitle('الأقسام المتاحة (Departments)');
+        $sheet2->setTitle('الأقسام المعتمدة (Departments)');
         $sheet2->setRightToLeft(true);
 
-        $sheet2->setCellValue('A1', 'قائمة الكليات والأقسام المسجلة في المنظومة (يمكنك نسخ اسم القسم ولصقه في ورقة الكوادر)');
+        $sheet2->setCellValue('A1', 'قائمة الأقسام والكليات المسجلة حالياً في النظام (للاسترشاد بها في عمود اسم القسم)');
         $sheet2->mergeCells('A1:D1');
         $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(12)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0D9488'));
         $sheet2->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $deptHeaders = [
             'A3' => '# (ID)',
-            'B3' => 'اسم الكلية / القسم (Department Name)',
-            'C3' => 'رئيس القسم المسؤول (Current Manager)',
-            'D3' => 'ساعات الدوام الرسمي (Working Shift)',
+            'B3' => 'اسم القسم / الكلية (Department Name)',
+            'C3' => 'رئيس القسم الحالي (Current Manager)',
+            'D3' => 'أوقات الدوام الرسمي (Working Shift)',
         ];
 
         foreach ($deptHeaders as $cell => $text) {
@@ -249,7 +312,7 @@ class UserController extends Controller
         foreach ($departments as $d) {
             $sheet2->setCellValue("A{$dRow}", $d->id);
             $sheet2->setCellValue("B{$dRow}", $d->name);
-            $sheet2->setCellValue("C{$dRow}", $d->manager?->name ?? 'غير محدد');
+            $sheet2->setCellValue("C{$dRow}", $d->manager?->name ?? 'غير معين');
             $sheet2->setCellValue("D{$dRow}", substr($d->work_start_time, 0, 5) . ' - ' . substr($d->work_end_time, 0, 5));
 
             $sheet2->getStyle("A{$dRow}:D{$dRow}")->applyFromArray([
@@ -276,9 +339,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Import users & employees in bulk from uploaded Excel/CSV file.
-     */
     public function importExcel(Request $request): RedirectResponse
     {
         $request->validate([
@@ -296,10 +356,9 @@ class UserController extends Controller
         }
 
         if (empty($rows) || count($rows) < 4) {
-            return back()->with('error', 'الملف المرفوع فارغ أو لا يحتوي على بيانات مطابقة للنموذج.');
+            return back()->with('error', 'الملف المرفوع فارغ أو لا يحتوي على بنية البيانات المطلوبة.');
         }
 
-        // Detect header row index
         $headerRowIndex = 4;
         foreach ($rows as $index => $cols) {
             $joined = implode(' ', array_filter($cols));
@@ -313,7 +372,6 @@ class UserController extends Controller
         $updatedCount = 0;
         $skippedCount = 0;
 
-        // Cache existing departments
         $departments = Department::all();
 
         for ($i = $headerRowIndex + 1; $i <= count($rows); $i++) {
@@ -327,7 +385,6 @@ class UserController extends Controller
             $roleInput = strtolower(trim($row['E'] ?? ''));
             $password = trim($row['F'] ?? '');
 
-            // Skip empty or purely instruction rows
             if (empty($name) && empty($email)) {
                 continue;
             }
@@ -337,7 +394,6 @@ class UserController extends Controller
                 continue;
             }
 
-            // Match or auto-create Department
             $departmentId = null;
             if (!empty($deptName)) {
                 $matchedDept = $departments->first(function ($d) use ($deptName) {
@@ -348,7 +404,6 @@ class UserController extends Controller
                 if ($matchedDept) {
                     $departmentId = $matchedDept->id;
                 } else {
-                    // Auto-create department
                     $newDept = Department::create([
                         'name' => $deptName,
                         'work_start_time' => '08:00:00',
@@ -359,18 +414,16 @@ class UserController extends Controller
                 }
             }
 
-            // Map Role
             $role = 'employee';
-            if (str_contains($roleInput, 'head') || str_contains($roleInput, 'رئيس') || str_contains($roleInput, 'عميد')) {
+            if (str_contains($roleInput, 'head') || str_contains($roleInput, 'رئيس') || str_contains($roleInput, 'قسم')) {
                 $role = 'head';
-            } elseif (str_contains($roleInput, 'admin') || str_contains($roleInput, 'رئاسة') || str_contains($roleInput, 'مشرف') || str_contains($roleInput, 'أدمن')) {
+            } elseif (str_contains($roleInput, 'admin') || str_contains($roleInput, 'مدير') || str_contains($roleInput, 'عام') || str_contains($roleInput, 'مسؤول')) {
                 $role = 'admin';
             }
 
             $user = User::where('email', $email)->first();
 
             if ($user) {
-                // Update existing user
                 $updateData = [
                     'name' => $name,
                     'job_title' => $jobTitle ?: $user->job_title,
@@ -385,7 +438,6 @@ class UserController extends Controller
                 $user->update($updateData);
                 $updatedCount++;
             } else {
-                // Create new user
                 User::create([
                     'name' => $name,
                     'email' => $email,
@@ -394,14 +446,15 @@ class UserController extends Controller
                     'role' => $role,
                     'password' => Hash::make(!empty($password) ? $password : 'password'),
                     'is_active' => true,
+                    'attendance_mode' => 'gps',
                 ]);
                 $createdCount++;
             }
         }
 
-        $feedbackMsg = "اكتملت المعالجة بنجاح! تم إنشاء {$createdCount} كادر جديد، وتحديث {$updatedCount} حساب.";
+        $feedbackMsg = "تمت معالجة الملف بنجاح! تم إنشاء {$createdCount} كادر جديد، وتحديث {$updatedCount} حساب.";
         if ($skippedCount > 0) {
-            $feedbackMsg .= " (تم تخطي {$skippedCount} سجلات لعدم اكتمال بياناتها).";
+            $feedbackMsg .= " (تم تخطي {$skippedCount} سجل غير صالح).";
         }
 
         return back()->with('success', $feedbackMsg);

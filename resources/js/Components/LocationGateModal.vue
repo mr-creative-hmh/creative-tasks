@@ -13,7 +13,7 @@ import {
   Lock,
   Sparkles,
   Radio,
-  ShieldAlert
+  Building2
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -29,12 +29,13 @@ const dept = computed(() => page.props.activeDepartment || authUser.value?.depar
 const todayAttendance = computed(() => page.props.todayAttendance);
 
 const isAdmin = computed(() => authUser.value?.role === 'admin');
+const isFixedMode = computed(() => authUser.value?.attendance_mode === 'fixed');
 
 // GPS is considered locked/blocked if:
-// 1. User is non-admin AND
+// 1. User is non-admin AND not in fixed workplace mode AND
 // 2. Either there is a GPS error OR (no attendance recorded today AND GPS not verified)
 const isGpsLocked = computed(() => {
-  if (isAdmin.value) return false;
+  if (isAdmin.value || isFixedMode.value) return false;
   
   // If GPS error occurred (e.g. turned off, permission revoked)
   if (gpsState.error) return true;

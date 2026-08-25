@@ -28,7 +28,11 @@ import {
   AlertCircle,
   KeyRound,
   Copy,
-  Check
+  Check,
+  MapPin,
+  Navigation,
+  Crosshair,
+  Radio
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -85,6 +89,68 @@ const passwordCopied = ref(false);
 const resetPasswordForm = useForm({
   password: '',
 });
+
+// Location & GPS Mode Modal State
+const isLocationModalOpen = ref(false);
+const locationTargetUser = ref(null);
+
+const locationForm = useForm({
+  attendance_mode: 'gps',
+  fixed_latitude: 33.31524,
+  fixed_longitude: 44.36612,
+  fixed_location_name: '',
+});
+
+const campusPresets = [
+  { name: 'حرم جامعة المأمون الرئيسي (السنتر)', lat: 33.31524, lng: 44.36612 },
+  { name: 'مبنى الرئاسة والعمادة', lat: 33.31550, lng: 44.36580 },
+  { name: 'مجمع القاعات والمختبرات المركزية', lat: 33.31480, lng: 44.36650 },
+  { name: 'كلية الصيدلة والمختبرات الطبية', lat: 33.31510, lng: 44.36680 },
+  { name: 'كلية تقنيات الهندسة والحاسوب', lat: 33.31570, lng: 44.36620 },
+];
+
+function openLocationModal(user) {
+  locationTargetUser.value = user;
+  locationForm.attendance_mode = user.attendance_mode || 'gps';
+  locationForm.fixed_latitude = user.fixed_latitude || 33.31524;
+  locationForm.fixed_longitude = user.fixed_longitude || 44.36612;
+  locationForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'مقر الحرم الجامعي');
+  isLocationModalOpen.value = true;
+}
+
+function applyLocationPreset(preset) {
+  locationForm.fixed_latitude = preset.lat;
+  locationForm.fixed_longitude = preset.lng;
+  locationForm.fixed_location_name = preset.name;
+}
+
+function captureCurrentBrowserLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        locationForm.fixed_latitude = parseFloat(pos.coords.latitude.toFixed(6));
+        locationForm.fixed_longitude = parseFloat(pos.coords.longitude.toFixed(6));
+      },
+      (err) => {
+        alert('تعذر التقاط إشارة الـ GPS: ' + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+}
+
+function submitLocationSettings() {
+  if (!locationTargetUser.value) return;
+
+  locationForm.put('/users/' + locationTargetUser.value.id + '/location-settings', {
+    preserveScroll: true,
+    onSuccess: () => {
+      isLocationModalOpen.value = false;
+      locationForm.reset();
+    }
+  });
+}
+
 
 function applyFilters() {
   const clean = {};
@@ -758,6 +824,199 @@ function submitImport() {
           </form>
         </div>
 
+      </div>
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- LOCATION & GPS SETTINGS MODAL                             -->
+    <!-- ========================================================= -->
+    <div
+      v-if="isLocationModalOpen"
+      class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+      @click="isLocationModalOpen = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 animate-scale-in"
+        @click.stop
+      >
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold shadow-xs">
+              <MapPin class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                {{ t('locationSettingsTitle') }}
+              </h3>
+              <p class="text-[11px] text-purple-600 dark:text-purple-400 font-semibold mt-0.5">
+                {{ locationTargetUser?.name }} ({{ locationTargetUser?.email }})
+              </p>
+            </div>
+          </div>
+          <button @click="isLocationModalOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          {{ t('locationSettingsDesc') }}
+        </p>
+
+        <!-- Attendance Mode Selection Cards -->
+        <div class="space-y-3">
+          <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300">{{ t('attendanceMode') }}</label>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Mode 1: Dynamic GPS -->
+            <label
+              :class="[
+                locationForm.attendance_mode === 'gps'
+                  ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 ring-2 ring-sky-500/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ]"
+              class="flex flex-col justify-between p-3.5 rounded-2xl border cursor-pointer transition-all"
+            >
+              <div class="flex items-start gap-2.5">
+                <input
+                  type="radio"
+                  v-model="locationForm.attendance_mode"
+                  value="gps"
+                  class="mt-0.5 text-sky-600 focus:ring-sky-500"
+                />
+                <div>
+                  <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Navigation class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                    <span>{{ t('modeGpsLive') }}</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    {{ t('modeGpsLiveDesc') }}
+                  </p>
+                </div>
+              </div>
+            </label>
+
+            <!-- Mode 2: Fixed Location -->
+            <label
+              :class="[
+                locationForm.attendance_mode === 'fixed'
+                  ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/40 ring-2 ring-purple-500/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ]"
+              class="flex flex-col justify-between p-3.5 rounded-2xl border cursor-pointer transition-all"
+            >
+              <div class="flex items-start gap-2.5">
+                <input
+                  type="radio"
+                  v-model="locationForm.attendance_mode"
+                  value="fixed"
+                  class="mt-0.5 text-purple-600 focus:ring-purple-500"
+                />
+                <div>
+                  <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Building2 class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>{{ t('modeFixedOffice') }}</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    {{ t('modeFixedOfficeDesc') }}
+                  </p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Fixed Location Details (Visible if Mode === 'fixed') -->
+        <div v-if="locationForm.attendance_mode === 'fixed'" class="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800 animate-fade-in">
+          <!-- Office Name -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+              {{ t('fixedLocationName') }} *
+            </label>
+            <input
+              v-model="locationForm.fixed_location_name"
+              type="text"
+              placeholder="مثال: مكتب العمادة / مختبر الحاسوب 2 / مبنى الصيدلة"
+              class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-900 dark:text-white focus:border-purple-500 font-medium"
+            />
+          </div>
+
+          <!-- Quick Campus Presets Chips -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-2">
+              {{ t('quickPresets') }}
+            </label>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="preset in campusPresets"
+                :key="preset.name"
+                @click="applyLocationPreset(preset)"
+                type="button"
+                class="px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950/60 text-slate-700 dark:text-slate-300 hover:text-purple-700 dark:hover:text-purple-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+              >
+                {{ preset.name }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Coordinates Inputs -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                {{ t('fixedLat') }}
+              </label>
+              <input
+                v-model="locationForm.fixed_latitude"
+                type="number"
+                step="any"
+                class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none font-mono text-slate-900 dark:text-white focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                {{ t('fixedLng') }}
+              </label>
+              <input
+                v-model="locationForm.fixed_longitude"
+                type="number"
+                step="any"
+                class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none font-mono text-slate-900 dark:text-white focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <!-- Capture Current Browser Location Button -->
+          <button
+            @click="captureCurrentBrowserLocation"
+            type="button"
+            class="w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Crosshair class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            <span>{{ t('useMyCurrentLocation') }}</span>
+          </button>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button
+            @click="isLocationModalOpen = false"
+            type="button"
+            class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            {{ t('cancel') }}
+          </button>
+          <button
+            @click="submitLocationSettings"
+            :disabled="locationForm.processing"
+            type="button"
+            class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-purple-600/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <CheckCircle2 class="w-4 h-4" />
+            <span>{{ t('saveLocationSettings') }}</span>
+          </button>
+        </div>
       </div>
     </div>
 

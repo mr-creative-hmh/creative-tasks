@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Department;
+use App\Models\AttendanceLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UserAndProfileTest extends TestCase
 {
@@ -26,7 +28,7 @@ class UserAndProfileTest extends TestCase
         $dept = Department::create(['name' => 'قسم الحاسوب']);
 
         $response = $this->actingAs($admin)->from('/users')->post('/users', [
-            'name' => 'د. حسام مهدي',
+            'name' => 'د. حسام علي',
             'email' => 'hussam@almamonuc.edu.iq',
             'password' => 'secret123',
             'role' => 'head',
@@ -144,5 +146,32 @@ class UserAndProfileTest extends TestCase
 
         $response->assertRedirect('/users');
         $this->assertTrue(Hash::check('new-reset-password-2026', $targetUser->fresh()->password));
+    }
+
+    public function test_admin_can_set_fixed_location_settings_for_user(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $employee = User::factory()->create(['role' => 'employee', 'attendance_mode' => 'gps']);
+
+        $response = $this->actingAs($admin)->from('/users')->put("/users/{$employee->id}/location-settings", [
+            'attendance_mode' => 'fixed',
+            'fixed_latitude' => 33.31524,
+            'fixed_longitude' => 44.36612,
+            'fixed_location_name' => 'مختبرات تكنولوجيا المعلومات - مبنى 3',
+        ]);
+
+        $response->assertRedirect('/users');
+        $this->assertDatabaseHas('users', [
+            'id' => $employee->id,
+            'attendance_mode' => 'fixed',
+            'fixed_location_name' => 'مختبرات تكنولوجيا المعلومات - مبنى 3',
+        ]);
+
+        $this->assertDatabaseHas('attendance_logs', [
+            'user_id' => $employee->id,
+            'log_date' => Carbon::today()->toDateString(),
+            'latitude' => 33.31524,
+            'longitude' => 44.36612,
+        ]);
     }
 }

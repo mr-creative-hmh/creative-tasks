@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -82,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::put('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::put('/users/{user}/location-settings', [UserController::class, 'setLocationSettings'])->name('users.location-settings');
         Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     });
 });

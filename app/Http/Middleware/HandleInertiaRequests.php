@@ -29,6 +29,18 @@ class HandleInertiaRequests extends Middleware
                 ->whereDate('log_date', now()->toDateString())
                 ->latest('id')
                 ->first();
+
+            // Auto-verify fixed workplace attendance on login/access
+            if ($user->attendance_mode === 'fixed' && !$todayAttendance) {
+                $todayAttendance = AttendanceLog::create([
+                    'user_id' => $user->id,
+                    'log_date' => now()->toDateString(),
+                    'latitude' => $user->fixed_latitude ?? 33.31524,
+                    'longitude' => $user->fixed_longitude ?? 44.36612,
+                    'log_time' => now()->toTimeString(),
+                    'notes' => 'حضور مكتبي ثابت معتمد: ' . ($user->fixed_location_name ?? 'مقر الحرم الجامعي'),
+                ]);
+            }
         }
 
         return array_merge(parent::share($request), [
@@ -47,6 +59,10 @@ class HandleInertiaRequests extends Middleware
                         'work_end_time' => $user->department->work_end_time,
                     ] : null,
                     'is_active' => $user->is_active,
+                    'attendance_mode' => $user->attendance_mode ?? 'gps',
+                    'fixed_latitude' => $user->fixed_latitude,
+                    'fixed_longitude' => $user->fixed_longitude,
+                    'fixed_location_name' => $user->fixed_location_name,
                 ] : null,
             ],
             'activeDepartment' => $activeDepartment,

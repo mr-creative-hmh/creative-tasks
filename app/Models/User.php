@@ -20,6 +20,10 @@ class User extends Authenticatable
         'department_id',
         'role',
         'is_active',
+        'attendance_mode',
+        'fixed_latitude',
+        'fixed_longitude',
+        'fixed_location_name',
     ];
 
     protected function casts(): array
@@ -28,6 +32,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'fixed_latitude' => 'float',
+            'fixed_longitude' => 'float',
         ];
     }
 
@@ -64,5 +70,10 @@ class User extends Authenticatable
     public function isEmployee(): bool
     {
         return $this->role === 'employee';
+    }
+
+    public function isFixedLocation(): bool
+    {
+        return $this->attendance_mode === 'fixed';
     }
 }
