@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import EmployeeMobileLayout from '@/Layouts/EmployeeMobileLayout.vue';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import {
@@ -34,10 +33,6 @@ const props = defineProps({
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user);
 const todayAttendance = computed(() => page.props.todayAttendance);
-
-const layout = computed(() => {
-  return authUser.value?.role === 'employee' ? EmployeeMobileLayout : AppLayout;
-});
 
 const profileForm = useForm({
   name: props.user.name,
@@ -79,7 +74,7 @@ function updatePassword() {
 <template>
   <Head :title="t('navProfile')" />
 
-  <component :is="layout">
+  <AppLayout>
     <div class="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
       
       <!-- Top Profile Banner Card -->
@@ -281,5 +276,5 @@ function updatePassword() {
       </div>
 
     </div>
-  </component>
+  </AppLayout>
 </template>
