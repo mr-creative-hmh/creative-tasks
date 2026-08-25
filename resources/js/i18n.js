@@ -1,12 +1,12 @@
-﻿import { reactive, computed } from 'vue';
-
-export const currentLocale = computed(() => i18nState.locale);
+import { reactive, computed } from 'vue';
 
 const savedLocale = typeof window !== 'undefined' ? localStorage.getItem('app_locale') || 'ar' : 'ar';
 
 export const i18nState = reactive({
   locale: savedLocale
 });
+
+export const currentLocale = computed(() => i18nState.locale);
 
 export const translations = {
   "ar": {
@@ -311,7 +311,15 @@ export const translations = {
     "adminRole": "المدير العام",
     "headRole": "رئيس قسم",
     "employeeRole": "موظف / تدريسي",
-    "deptManager": "رئيس القسم"
+    "deptManager": "رئيس القسم",
+    "gpsGateTitle": "التحقق الجغرافي إجباري (GPS Enforced)",
+    "gpsGateScanning": "جاري التحقق من الموقع الجغرافي...",
+    "gpsGateDesc": "يتطلب النظام تفعيل خدمة الموقع الجغرافي (GPS) والموافقة على إذن المتصفح لتسجيل حضورك الميداني وتفعيل الوصول للمنظومة.",
+    "gpsGateScanningDesc": "النظام يلتقط إحداثيات تواجدك الميداني لتسجيل الحضور وتفعيل المهام اليومية.",
+    "gpsRetryBtn": "تفعيل وإعادة فحص الـ GPS",
+    "gpsScanningBtn": "جاري الاتصال بالـ GPS...",
+    "gpsDemoSimulation": "تأكيد بموقع الحرم الجامعي (تجربة واختبار)",
+    "gpsPermissionBlocked": "تم إيقاف خدمة الموقع (GPS) أو حظر إذن المتصفح. يرجى تفعيل الـ GPS للمتابعة."
   },
   "en": {
     "appName": "Al-Ma'moon University",
@@ -615,7 +623,15 @@ export const translations = {
     "adminRole": "General Manager (Admin)",
     "headRole": "Department Head",
     "employeeRole": "Employee",
-    "deptManager": "Head of Department"
+    "deptManager": "Head of Department",
+    "gpsGateTitle": "GPS Verification Required (Enforced)",
+    "gpsGateScanning": "Verifying GPS Location...",
+    "gpsGateDesc": "Location services (GPS) must be enabled with browser permission allowed to verify campus attendance and access system features.",
+    "gpsGateScanningDesc": "Capturing live coordinates to verify your field presence and unlock daily tasks.",
+    "gpsRetryBtn": "Enable & Retry GPS",
+    "gpsScanningBtn": "Connecting to GPS...",
+    "gpsDemoSimulation": "Simulate Campus Location (Demo)",
+    "gpsPermissionBlocked": "GPS service is disabled or location permission was denied. Please enable GPS to proceed."
   }
 };
 
@@ -623,7 +639,6 @@ export function t(key, params = {}) {
   const locale = i18nState.locale;
   let text = translations[locale]?.[key] || translations['ar']?.[key] || key;
 
-  // Interpolate {param}
   for (const [k, v] of Object.entries(params)) {
     text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
   }

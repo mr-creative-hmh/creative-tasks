@@ -1,10 +1,10 @@
-<script setup>
+﻿<script setup>
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageBanner from '@/Components/PageBanner.vue';
-import LocationGateModal from '@/Components/LocationGateModal.vue';
+
 import TaskCard from '@/Components/TaskCard.vue';
 import {
   CheckSquare,
@@ -68,8 +68,7 @@ function addSelfTask() {
 
   <AppLayout>
     <div class="w-full space-y-6">
-      <!-- GPS & Shift Gate Banner -->
-      <LocationGateModal :required="true" />
+      
 
       <!-- Unified Page Banner -->
       <PageBanner

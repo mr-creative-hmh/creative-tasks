@@ -6,6 +6,7 @@ import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import AccentPicker from '@/Components/AccentPicker.vue';
 import GpsLiveIndicator from '@/Components/GpsLiveIndicator.vue';
+import LocationGateModal from '@/Components/LocationGateModal.vue';
 import { initGlobalGpsTracker } from '@/Services/gpsTracker';
 import {
   LayoutDashboard,
@@ -112,7 +113,7 @@ const navItems = computed(() => {
   return items;
 });
 
-// Native Mobile Bottom Nav Items (Max 4 items for clear mobile tap zones)
+// Native Mobile Bottom Nav Items
 const mobileBottomNavItems = computed(() => {
   const role = authUser.value?.role || 'employee';
   if (role === 'employee') {
@@ -442,6 +443,9 @@ onMounted(() => {
 
       <!-- Main Page Content -->
       <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full">
+        <!-- Global GPS Enforcement Lock Modal -->
+        <LocationGateModal />
+
         <!-- Flash Alert Feedback Messages -->
         <div v-if="page.props.flash?.success" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
