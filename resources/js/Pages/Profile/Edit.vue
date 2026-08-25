@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -259,7 +259,7 @@ function updatePassword() {
           <div class="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
             <div class="min-w-0 flex-1 pl-2">
               <div class="font-bold text-slate-900 dark:text-white mb-0.5">{{ t('themeMode') }}</div>
-              <div class="text-[11px] text-slate-500 dark:text-slate-400">التبديل بين النمط الليلي الفخم والنهاري</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">{{ t('themeSub') }}</div>
             </div>
             <ThemeToggle />
           </div>
@@ -268,7 +268,7 @@ function updatePassword() {
           <div class="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
             <div class="min-w-0 flex-1 pl-2">
               <div class="font-bold text-slate-900 dark:text-white mb-0.5">{{ t('languagePref') }}</div>
-              <div class="text-[11px] text-slate-500 dark:text-slate-400">Interface Language (العربية / English)</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">{{ t('languageSub') }}</div>
             </div>
             <LanguageToggle />
           </div>

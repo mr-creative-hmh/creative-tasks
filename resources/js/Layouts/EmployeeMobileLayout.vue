@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -68,7 +68,7 @@ function logout() {
 
         <div v-if="todayAttendance" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800/40">
           <CheckCircle2 class="w-3 h-3" />
-          <span>حاضر ({{ todayAttendance.log_time }})</span>
+          <span>{{ t('present') }} ({{ todayAttendance.log_time }})</span>
         </div>
         <div v-else class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
           <AlertTriangle class="w-3 h-3" />

@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -86,7 +86,7 @@ function deleteDept(dept) {
           {{ t('navDepartments') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          إدارة الهيكل التنظيمي، تعيين رؤساء الأقسام، وضبط أوقات الدوام الرسمي
+          {{ t('departmentsSubtitle') }}
         </p>
       </div>
 
@@ -238,7 +238,7 @@ function deleteDept(dept) {
               type="submit"
               class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-sm disabled:opacity-50 cursor-pointer transition-all"
             >
-              {{ deptForm.processing ? 'جاري الحفظ...' : t('save') }}
+              {{ deptForm.processing ? t('saving') : t('save') }}
             </button>
           </div>
         </form>

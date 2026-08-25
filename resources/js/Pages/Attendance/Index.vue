@@ -134,7 +134,7 @@ async function saveManualAttendance() {
             <span>{{ t('attendanceMapTitle') }}</span>
           </h1>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            متابعة إحداثيات الحضور الميداني لكوادر الكليات والأقسام وتأكيد التواجد داخل الحرم الجامعي
+            {{ t('attendanceSubtitle') }}
           </p>
         </div>
 
@@ -145,7 +145,7 @@ async function saveManualAttendance() {
               <UserCheck class="w-4 h-4" />
             </div>
             <div>
-              <div class="text-[10px] text-slate-400 font-semibold leading-tight">الحضور اليوم</div>
+              <div class="text-[10px] text-slate-400 font-semibold leading-tight">{{ t('attendanceTodayLabel') }}</div>
               <div class="text-xs font-black text-slate-800 dark:text-slate-100 font-mono">
                 {{ stats.total_present_today }} / {{ stats.total_employees }}
               </div>
@@ -159,7 +159,7 @@ async function saveManualAttendance() {
             class="px-3.5 py-2.5 rounded-2xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 font-bold text-xs border border-sky-200 dark:border-sky-800/60 transition-all flex items-center gap-2 cursor-pointer"
           >
             <Edit3 class="w-4 h-4" />
-            <span>تثبيت موقع يدوي</span>
+            <span>{{ t('manualPinBtn') }}</span>
             <ChevronUp v-if="showManualPanel" class="w-3.5 h-3.5" />
             <ChevronDown v-else class="w-3.5 h-3.5" />
           </button>
@@ -179,7 +179,7 @@ async function saveManualAttendance() {
             </h3>
           </div>
           <span class="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
-            💡 يمكنك النقر على أي نقطة في الخريطة لتعبئة الإحداثيات تلقائياً
+            {{ t('manualPinHint') }}
           </span>
         </div>
 
@@ -219,33 +219,33 @@ async function saveManualAttendance() {
             />
           </div>
 
-          <!-- Submit Button -->
+          <!-- Action Button -->
           <div class="flex items-end">
             <button
               @click="saveManualAttendance"
               :disabled="isUpdatingManual"
               type="button"
-              class="w-full h-10 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              class="w-full h-10 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <MapPin class="w-4 h-4" />
+              <CheckCircle2 class="w-4 h-4" />
               <span>{{ isUpdatingManual ? t('savingManualLocation') : t('pinLocationBtn') }}</span>
             </button>
           </div>
         </div>
 
-        <!-- Feedback Alert Messages -->
-        <div v-if="manualSuccessMsg" class="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 border border-emerald-200 dark:border-emerald-800 animate-fade-in">
-          <CheckCircle2 class="w-4 h-4 shrink-0 text-emerald-600" />
-          <span class="font-bold">{{ manualSuccessMsg }}</span>
+        <!-- Feedback Alerts -->
+        <div v-if="manualSuccessMsg" class="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 class="w-4 h-4 shrink-0" />
+          <span>{{ manualSuccessMsg }}</span>
         </div>
-        <div v-if="manualErrorMsg" class="mt-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2 border border-rose-200 dark:border-rose-800 animate-fade-in">
-          <AlertCircle class="w-4 h-4 shrink-0 text-rose-600" />
-          <span class="font-bold">{{ manualErrorMsg }}</span>
+        <div v-if="manualErrorMsg" class="mt-3 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+          <AlertCircle class="w-4 h-4 shrink-0" />
+          <span>{{ manualErrorMsg }}</span>
         </div>
       </div>
 
-      <!-- 3. Symmetrical Control & Filters Bar -->
-      <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <!-- 3. Dynamic Filter Bar -->
+      <div class="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <!-- Department Filter -->
           <div>
@@ -253,8 +253,7 @@ async function saveManualAttendance() {
             <select
               v-model="filterForm.department_id"
               @change="applyFilters"
-              :disabled="authUser.role === 'head'"
-              class="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 disabled:opacity-60"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
             >
               <option value="">{{ t('allDepartments') }}</option>
               <option v-for="dept in departments" :key="dept.id" :value="dept.id">
@@ -269,7 +268,7 @@ async function saveManualAttendance() {
             <select
               v-model="filterForm.user_id"
               @change="applyFilters"
-              class="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
             >
               <option value="">{{ t('allEmployees') }}</option>
               <option v-for="emp in employees" :key="emp.id" :value="emp.id">
@@ -278,36 +277,36 @@ async function saveManualAttendance() {
             </select>
           </div>
 
-          <!-- Date -->
+          <!-- Date Filter -->
           <div>
             <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('tableLogDate') }}</label>
             <input
               v-model="filterForm.date"
               @change="applyFilters"
               type="date"
-              class="w-full h-10 px-3 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-800 dark:text-slate-100 font-mono"
+              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
             />
           </div>
         </div>
       </div>
 
-      <!-- 4. Interactive Campus Map Visualizer -->
-      <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div class="flex items-center justify-between mb-3.5">
-          <div class="flex items-center gap-2">
+      <!-- 4. Interactive Live Map Section -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
               <Navigation class="w-4 h-4" />
             </div>
             <div>
               <h2 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                خريطة التواجد الميداني المباشر (Campus Map)
+                {{ t('campusMapTitle') }}
               </h2>
-              <span class="text-[10px] text-slate-400">إجمالي النقاط المحددة: {{ mapPoints.length }} كادر</span>
+              <span class="text-[10px] text-slate-400">{{ t('totalPinsCount', { count: mapPoints.length }) }}</span>
             </div>
           </div>
 
           <span class="text-[11px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/60 px-2.5 py-1 rounded-xl border border-sky-200/60 dark:border-sky-800/60">
-            📍 {{ mapPoints.length }} إحداثيات مباشرة
+            {{ t('directCoordsCount', { count: mapPoints.length }) }}
           </span>
         </div>
 
@@ -393,14 +392,14 @@ async function saveManualAttendance() {
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold hover:bg-sky-100 dark:hover:bg-sky-900 transition-colors text-[11px] border border-sky-200/60 dark:border-sky-800/60 cursor-pointer shadow-xs"
                   >
                     <ExternalLink class="w-3 h-3" />
-                    <span>خرائط Google</span>
+                    <span>{{ t('googleMaps') }}</span>
                   </a>
                 </td>
               </tr>
 
               <tr v-if="logs.data.length === 0">
                 <td colspan="6" class="py-12 text-center text-slate-400">
-                  لا توجد تسجيلات حضور مطابقة لمعايير البحث في هذا اليوم.
+                  {{ t('noLogsFound') }}
                 </td>
               </tr>
             </tbody>
@@ -439,13 +438,13 @@ async function saveManualAttendance() {
                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-bold text-[10px] border border-sky-200/60 dark:border-sky-800/60"
               >
                 <ExternalLink class="w-3 h-3" />
-                <span>Google Maps</span>
+                <span>{{ t('googleMaps') }}</span>
               </a>
             </div>
           </div>
 
           <div v-if="logs.data.length === 0" class="py-10 text-center text-slate-400 text-xs">
-            لا توجد تسجيلات حضور مطابقة لمعايير البحث.
+            {{ t('noLogsFound') }}
           </div>
         </div>
       </div>

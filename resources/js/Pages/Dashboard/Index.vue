@@ -56,12 +56,16 @@ defineProps({
           {{ t('appName') }}
         </h1>
         <p class="text-xs sm:text-sm text-sky-100/90 mt-1 leading-relaxed">
-          متابعة مباشرة لمؤشرات الإنجاز، تكليفات الكوادر، وتأكيد التواجد الميداني بالـ GPS
+          {{ t('dashboardSubtitle') }}
         </p>
       </div>
+
+      <!-- Ambient Glow Shapes -->
+      <div class="absolute -top-16 -end-16 w-64 h-64 bg-teal-400/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -start-16 w-64 h-64 bg-sky-400/20 rounded-full blur-3xl pointer-events-none"></div>
     </div>
 
-    <!-- KPI Metric Cards Grid -->
+    <!-- Quick Stats Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <!-- Total Tasks -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-sky-500/50 transition-all">
@@ -229,7 +233,7 @@ defineProps({
               target="_blank" 
               class="text-sky-600 dark:text-sky-400 font-semibold hover:underline"
             >
-              Google Maps ↗
+              {{ t('googleMaps') }} ↗
             </a>
           </div>
         </div>

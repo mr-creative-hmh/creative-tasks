@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, watch } from 'vue';
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -397,7 +397,7 @@ function deleteTask(task) {
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
               <span>{{ t('selectDepartmentFirst') }}</span>
               <span v-if="isHead" class="text-[10px] text-sky-600 font-bold bg-sky-50 dark:bg-sky-950 px-2 py-0.5 rounded">
-                قسمك المعتمد (Your Dept)
+                {{ t('yourDepartment') }}
               </span>
             </label>
             <select
@@ -406,7 +406,7 @@ function deleteTask(task) {
               :disabled="isHead || !!editingTask"
               class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none disabled:opacity-60"
             >
-              <option value="">{{ t('allDepartments') }} (كافة الكليات والأقسام)</option>
+              <option value="">{{ t('allDeptsLabel') }}</option>
               <option v-for="dept in departments" :key="dept.id" :value="dept.id">
                 {{ dept.name }}
               </option>

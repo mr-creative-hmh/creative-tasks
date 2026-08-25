@@ -68,7 +68,7 @@ async function sendAutoAttendanceLog(lat, lng, isSilent = false) {
     });
 
     if (!isSilent) {
-      successMessage.value = 'تم تأكيد التواجد بالحرم الجامعي وتسجيل الحضور آلياً بنجاح!';
+      successMessage.value = t('locationAccessGranted');
       isLocationLocked.value = false;
       setTimeout(() => {
         window.location.reload();
@@ -76,7 +76,7 @@ async function sendAutoAttendanceLog(lat, lng, isSilent = false) {
     }
   } catch (err) {
     if (!isSilent) {
-      errorMessage.value = err.response?.data?.message || 'فشل إرسال إحداثيات الموقع للخادم.';
+      errorMessage.value = err.response?.data?.message || t('locationDenied');
       isLocationLocked.value = true;
     }
   } finally {
@@ -86,7 +86,7 @@ async function sendAutoAttendanceLog(lat, lng, isSilent = false) {
 
 function startAutomaticLocationDetection() {
   if (!navigator.geolocation) {
-    errorMessage.value = 'متصفحك لا يدعم تحديد الموقع التلقائي (Geolocation).';
+    errorMessage.value = t('locationDenied');
     isLocationLocked.value = true;
     return;
   }
@@ -107,16 +107,12 @@ function startAutomaticLocationDetection() {
       isLocationLocked.value = true;
       switch (error.code) {
         case error.PERMISSION_DENIED:
-          errorMessage.value = 'تم حظر إذن تحديد الموقع الجغرافي. الوصول للموقع إجباري لتسجيل الحضور واستخدام المهام.';
+          errorMessage.value = t('locationDenied');
           break;
         case error.POSITION_UNAVAILABLE:
-          errorMessage.value = 'معلومات الموقع الجغرافي للـ GPS غير متاحة حالياً.';
-          break;
         case error.TIMEOUT:
-          errorMessage.value = 'انتهت مهلة استشعار الـ GPS. اضغط أدناه لإعادة المحاولة.';
-          break;
         default:
-          errorMessage.value = 'حدث خطأ أثناء استشعار الموقع الجغرافي.';
+          errorMessage.value = t('locationRequiredMsg');
       }
     },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
@@ -183,10 +179,10 @@ onUnmounted(() => {
         </div>
 
         <h2 class="text-lg font-black text-white mb-1">
-          {{ isScanning ? 'جاري التحقق التلقائي من الموقع...' : 'التحقق الجغرافي إجباري (GPS Enforced)' }}
+          {{ isScanning ? t('gpsScanningTitle') : t('gpsEnforcedTitle') }}
         </h2>
         <p class="text-xs text-slate-400 mb-5 leading-relaxed">
-          {{ isScanning ? 'النظام يلتقط إحداثيات تواجدك بالحرم الجامعي لتسجيل الحضور وتفعيل مهامك اليومية.' : 'يتطلب النظام التحقق التلقائي من موقعك الجغرافي داخل الحرم الجامعي لفتح المهام وتسجيل الحضور الميداني.' }}
+          {{ isScanning ? t('gpsScanningDesc') : t('gpsLockDesc') }}
         </p>
 
         <!-- Error Alert -->
@@ -210,7 +206,7 @@ onUnmounted(() => {
             class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 active:scale-95 text-white font-bold text-xs shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Navigation class="w-4 h-4" :class="{'animate-spin': isScanning}" />
-            <span>{{ isScanning ? 'جاري الاتصال بالـ GPS...' : 'إعادة محاولة التحقق من الـ GPS' }}</span>
+            <span>{{ isScanning ? t('connectingGps') : t('retryGps') }}</span>
           </button>
 
           <!-- Fallback simulation for localhost/demo -->
@@ -221,7 +217,7 @@ onUnmounted(() => {
             class="w-full py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 font-semibold text-xs transition-colors flex items-center justify-center gap-2"
           >
             <Sparkles class="w-3.5 h-3.5 text-amber-400" />
-            <span>تأكيد بموقع الحرم الجامعي (تجربة واختبار)</span>
+            <span>{{ t('demoSimCampusBtn') }}</span>
           </button>
         </div>
       </div>
@@ -235,10 +231,10 @@ onUnmounted(() => {
             <CheckCircle2 class="w-5 h-5" />
           </div>
           <div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">التحقق الجغرافي التلقائي (GPS Verified)</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">{{ t('gpsVerifiedBadge') }}</div>
             <div class="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 mt-0.5">
               <span class="text-emerald-600 dark:text-emerald-400">
-                تم تسجيل وتحديث تواجدك بالحرم الجامعي آلياً ({{ todayAttendance.log_time }})
+                {{ t('gpsVerifiedDesc') }} ({{ todayAttendance.log_time }})
               </span>
             </div>
           </div>
@@ -247,9 +243,9 @@ onUnmounted(() => {
         <!-- Shift Info & Background Sync Pill -->
         <div class="flex items-center gap-2 text-xs bg-slate-50 dark:bg-slate-800/70 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span class="text-[11px] text-slate-600 dark:text-slate-300">التتبع التلقائي نشط</span>
+          <span class="text-[11px] text-slate-600 dark:text-slate-300">{{ t('autoTrackingActive') }}</span>
           <span class="text-slate-400">•</span>
-          <span class="text-[11px] text-slate-500 dark:text-slate-400">الدوام: {{ shiftStartTime }} - {{ shiftEndTime }}</span>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">{{ t('shiftHours') }}: {{ shiftStartTime }} - {{ shiftEndTime }}</span>
         </div>
       </div>
 

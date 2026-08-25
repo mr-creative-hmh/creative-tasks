@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -87,7 +87,7 @@ function addSelfTask() {
           <!-- Progress Percentage Circle -->
           <div class="shrink-0 flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20">
             <span class="text-lg sm:text-2xl font-black text-white font-mono">{{ summary.avg_progress }}%</span>
-            <span class="text-[9px] sm:text-[10px] font-bold text-sky-100">{{ t('avgProgress') || 'المعدل' }}</span>
+            <span class="text-[9px] sm:text-[10px] font-bold text-sky-100">{{ t('avgProgress') }}</span>
           </div>
         </div>
 

@@ -5,35 +5,32 @@ import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   FileBarChart,
-  Download,
   Calendar,
-  Filter,
-  Users,
-  Award,
-  TrendingUp,
   Building2,
-  FileSpreadsheet,
-  PieChart,
-  BarChart3,
+  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
-  Sparkles,
-  ArrowUpRight,
-  ListTodo,
-  Printer
+  TrendingUp,
+  Award,
+  Filter,
+  Printer,
+  FileSpreadsheet,
+  PieChart,
+  BarChart3,
+  ListTodo
 } from 'lucide-vue-next';
 
 const props = defineProps({
+  departments: {
+    type: Array,
+    default: () => []
+  },
+  employees: {
+    type: Array,
+    default: () => []
+  },
   tasks: {
-    type: Array,
-    default: () => []
-  },
-  employeePerformance: {
-    type: Array,
-    default: () => []
-  },
-  departmentPerformance: {
     type: Array,
     default: () => []
   },
@@ -47,13 +44,15 @@ const props = defineProps({
       assigned_type: 0,
       self_type: 0,
       avg_progress: 0,
+      period_from: '',
+      period_to: ''
     })
   },
-  departments: {
+  departmentPerformance: {
     type: Array,
     default: () => []
   },
-  employees: {
+  employeePerformance: {
     type: Array,
     default: () => []
   },
@@ -64,15 +63,15 @@ const props = defineProps({
 });
 
 const filterForm = ref({
+  date_from: props.filters.date_from || '',
+  date_to: props.filters.date_to || '',
   department_id: props.filters.department_id || '',
   user_id: props.filters.user_id || '',
-  status: props.filters.status || '',
   task_type: props.filters.task_type || '',
-  date_from: props.filters.date_from ? String(props.filters.date_from).split('T')[0] : '',
-  date_to: props.filters.date_to ? String(props.filters.date_to).split('T')[0] : '',
+  status: props.filters.status || '',
 });
 
-// Helper for local YYYY-MM-DD format (avoids UTC timezone shift)
+// Helper to format local date YYYY-MM-DD reliably without UTC offset shifts
 function formatLocalDate(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -80,64 +79,68 @@ function formatLocalDate(d) {
   return `${year}-${month}-${day}`;
 }
 
-// Track active preset state dynamically
-const activePreset = ref('month');
-
-function getCleanFilterParams() {
-  const clean = {};
-  for (const [key, val] of Object.entries(filterForm.value)) {
-    if (val !== '' && val !== null && val !== undefined) {
-      clean[key] = val;
-    }
-  }
-  return clean;
-}
+// Track active preset for visually highlighting the selected button
+const activePreset = ref(
+  props.filters.date_from && props.filters.date_from === props.filters.date_to
+    ? 'today'
+    : (!props.filters.date_from && !props.filters.date_to ? 'all' : 'month')
+);
 
 function applyFilters() {
-  router.get('/reports', getCleanFilterParams(), { preserveState: true, replace: true });
+  const cleanParams = {};
+  for (const [k, v] of Object.entries(filterForm.value)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      cleanParams[k] = v;
+    }
+  }
+  router.get('/reports', cleanParams, { preserveState: true, replace: true });
 }
 
-function onManualDateChange() {
-  activePreset.value = 'custom';
-  applyFilters();
-}
-
-function setDatePreset(type) {
-  activePreset.value = type;
+function setDatePreset(preset) {
+  activePreset.value = preset;
   const now = new Date();
-  const todayStr = formatLocalDate(now);
 
-  if (type === 'today') {
+  if (preset === 'today') {
+    const todayStr = formatLocalDate(now);
     filterForm.value.date_from = todayStr;
     filterForm.value.date_to = todayStr;
-  } else if (type === 'week') {
-    const day = now.getDay(); // 0 is Sunday, 6 is Saturday
-    const diff = (day + 1) % 7; // distance from Saturday
+  } else if (preset === 'week') {
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - diff);
+    const day = startOfWeek.getDay(); // 0 is Sun
+    const diff = (day + 1) % 7; // Adjust for Saturday/Sunday work week in Iraq
+    startOfWeek.setDate(startOfWeek.getDate() - diff);
     filterForm.value.date_from = formatLocalDate(startOfWeek);
-    filterForm.value.date_to = todayStr;
-  } else if (type === 'month') {
+    filterForm.value.date_to = formatLocalDate(now);
+  } else if (preset === 'month') {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     filterForm.value.date_from = formatLocalDate(startOfMonth);
-    filterForm.value.date_to = todayStr;
-  } else if (type === 'all') {
+    filterForm.value.date_to = formatLocalDate(now);
+  } else if (preset === 'all') {
     filterForm.value.date_from = '';
     filterForm.value.date_to = '';
   }
+
   applyFilters();
 }
 
-function exportPdf() {
-  const clean = getCleanFilterParams();
-  const queryString = new URLSearchParams(clean).toString();
-  window.open(`/reports/pdf?${queryString}`, '_blank');
+function exportExcel() {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(filterForm.value)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      params.append(k, v);
+    }
+  }
+  window.open(`/reports/export-excel?${params.toString()}`, '_blank');
 }
 
-function exportExcel() {
-  const clean = getCleanFilterParams();
-  const queryString = new URLSearchParams(clean).toString();
-  window.location.href = `/reports/excel?${queryString}`;
+function exportPdf() {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(filterForm.value)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      params.append(k, v);
+    }
+  }
+  window.open(`/reports/print?${params.toString()}`, '_blank');
 }
 </script>
 
@@ -145,14 +148,14 @@ function exportExcel() {
   <Head :title="t('navReports')" />
 
   <AppLayout>
-    <!-- Header with PDF & Excel Export Buttons -->
+    <!-- Header & Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
           {{ t('navReports') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          تحليل مؤشرات الإنجاز الدورية، الرسوم البيانية، وتصدير التقارير الرسمية المعتمدة (PDF & XLSX)
+          {{ t('reportsSubtitle') }}
         </p>
       </div>
 
@@ -165,7 +168,7 @@ function exportExcel() {
           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
         >
           <FileSpreadsheet class="w-4 h-4" />
-          <span>تصدير إكسل (XLSX)</span>
+          <span>{{ t('exportExcel') }}</span>
         </button>
 
         <!-- PDF Export Button -->
@@ -175,7 +178,7 @@ function exportExcel() {
           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-95 text-white font-bold text-xs shadow-md shadow-rose-600/25 transition-all cursor-pointer"
         >
           <Printer class="w-4 h-4" />
-          <span>طباعة التقرير / PDF</span>
+          <span>{{ t('printReportPdf') }}</span>
         </button>
       </div>
     </div>
@@ -184,7 +187,7 @@ function exportExcel() {
     <div class="flex flex-wrap items-center justify-between gap-2 mb-4 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
       <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
         <Calendar class="w-4 h-4 text-sky-600" />
-        <span>الفترات الزمنية السريعة:</span>
+        <span>{{ t('quickPresets') }}</span>
       </div>
       <div class="flex items-center gap-1.5">
         <button
@@ -228,7 +231,7 @@ function exportExcel() {
             : 'bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-medium'"
           class="px-3.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer text-xs"
         >
-          {{ t('all') }} (كافة الفترات)
+          {{ t('allPeriods') }}
         </button>
       </div>
     </div>
@@ -241,7 +244,7 @@ function exportExcel() {
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('dateFrom') }}</label>
           <input
             v-model="filterForm.date_from"
-            @change="onManualDateChange"
+            @change="applyFilters"
             type="date"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
           />
@@ -252,13 +255,13 @@ function exportExcel() {
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('dateTo') }}</label>
           <input
             v-model="filterForm.date_to"
-            @change="onManualDateChange"
+            @change="applyFilters"
             type="date"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
           />
         </div>
 
-        <!-- Department Filter -->
+        <!-- Department -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
           <select
@@ -273,7 +276,7 @@ function exportExcel() {
           </select>
         </div>
 
-        <!-- Employee Filter -->
+        <!-- Employee -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('tableEmployee') }}</label>
           <select
@@ -283,27 +286,12 @@ function exportExcel() {
           >
             <option value="">{{ t('allEmployees') }}</option>
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-              {{ emp.name }}
+              {{ emp.name }}{{ emp.job_title ? ` (${emp.job_title})` : '' }}
             </option>
           </select>
         </div>
 
-        <!-- Status Filter -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('status') }}</label>
-          <select
-            v-model="filterForm.status"
-            @change="applyFilters"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
-          >
-            <option value="">{{ t('allStatuses') }}</option>
-            <option value="completed">{{ t('statusCompleted') }}</option>
-            <option value="in_progress">{{ t('statusInProgress') }}</option>
-            <option value="pending">{{ t('statusPending') }}</option>
-          </select>
-        </div>
-
-        <!-- Task Type Filter -->
+        <!-- Task Type -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('taskType') }}</label>
           <select
@@ -316,10 +304,25 @@ function exportExcel() {
             <option value="self_reported">{{ t('typeSelf') }}</option>
           </select>
         </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('status') }}</label>
+          <select
+            v-model="filterForm.status"
+            @change="applyFilters"
+            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+          >
+            <option value="">{{ t('allStatuses') }}</option>
+            <option value="pending">{{ t('statusPending') }}</option>
+            <option value="in_progress">{{ t('statusInProgress') }}</option>
+            <option value="completed">{{ t('statusCompleted') }}</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <!-- Summary KPI Metric Cards -->
+    <!-- Summary KPI Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('totalTasks') }}</div>
@@ -327,22 +330,22 @@ function exportExcel() {
       </div>
 
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('completedTasks') }}</div>
+        <div class="text-[10px] font-bold text-emerald-500 mb-1 uppercase">{{ t('completedTasks') }}</div>
         <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ summary.completed }}</div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('inProgressTasks') }}</div>
+        <div class="text-[10px] font-bold text-teal-500 mb-1 uppercase">{{ t('inProgressTasks') }}</div>
         <div class="text-2xl font-black text-teal-600 dark:text-teal-400 font-mono">{{ summary.in_progress }}</div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('statusPending') }}</div>
+        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('pendingTasks') }}</div>
         <div class="text-2xl font-black text-slate-500 font-mono">{{ summary.pending }}</div>
       </div>
 
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">تكليف / ذاتي</div>
+        <div class="text-[10px] font-bold text-slate-400 mb-1 uppercase">{{ t('taskDistribution') }}</div>
         <div class="text-base font-extrabold text-slate-700 dark:text-slate-300 font-mono mt-1">
           {{ summary.assigned_type }} <span class="text-xs text-slate-400">/</span> {{ summary.self_type }}
         </div>
@@ -362,7 +365,7 @@ function exportExcel() {
         <div>
           <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
             <PieChart class="w-4 h-4 text-sky-600" />
-            <h2 class="text-xs font-bold text-slate-900 dark:text-white">توزيع حالات المهام (Status Breakdown)</h2>
+            <h2 class="text-xs font-bold text-slate-900 dark:text-white">{{ t('statusBreakdown') }}</h2>
           </div>
 
           <!-- Donut Graphic -->
@@ -391,7 +394,7 @@ function exportExcel() {
               </svg>
               <div class="absolute flex flex-col items-center justify-center text-center">
                 <span class="text-xl font-black text-slate-900 dark:text-white font-mono">{{ summary.avg_progress }}%</span>
-                <span class="text-[9px] text-slate-400 font-semibold">معدل الإنجاز</span>
+                <span class="text-[9px] text-slate-400 font-semibold">{{ t('avgCompletion') }}</span>
               </div>
             </div>
           </div>
@@ -430,9 +433,9 @@ function exportExcel() {
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div class="flex items-center gap-2">
             <BarChart3 class="w-4 h-4 text-sky-600" />
-            <h2 class="text-xs font-bold text-slate-900 dark:text-white">مقارنة أداء الكليات والأقسام (Department Performance)</h2>
+            <h2 class="text-xs font-bold text-slate-900 dark:text-white">{{ t('deptPerformance') }}</h2>
           </div>
-          <span class="text-[11px] text-slate-400 font-mono">{{ departmentPerformance.length }} قسم</span>
+          <span class="text-[11px] text-slate-400 font-mono">{{ departmentPerformance.length }}</span>
         </div>
 
         <div class="space-y-4">
@@ -447,7 +450,7 @@ function exportExcel() {
                 <span class="font-bold text-slate-800 dark:text-slate-200">{{ dept.department_name }}</span>
               </div>
               <div class="flex items-center gap-3">
-                <span class="text-[11px] text-slate-400 font-mono">{{ dept.completed_tasks }} / {{ dept.total_tasks }} مهمة</span>
+                <span class="text-[11px] text-slate-400 font-mono">{{ dept.completed_tasks }} / {{ dept.total_tasks }}</span>
                 <span class="font-black text-sky-600 dark:text-sky-400 font-mono text-xs">{{ dept.avg_progress }}%</span>
               </div>
             </div>
@@ -474,10 +477,10 @@ function exportExcel() {
       <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
           <ListTodo class="w-4 h-4 text-sky-600" />
-          <span>السجل التفصيلي للمهام المصفاة (Filtered Detailed Tasks)</span>
+          <span>{{ t('detailedFilteredTasks') }}</span>
         </h3>
         <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">
-          {{ tasks.length }} مهمة ظاهرة
+          {{ t('tasksVisible', { count: tasks.length }) }}
         </span>
       </div>
 
@@ -571,68 +574,66 @@ function exportExcel() {
       <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
           <Award class="w-4 h-4 text-amber-500" />
-          <span>لوحة شرف إنجاز الكوادر (Staff Performance Leaderboard)</span>
+          <span>{{ t('staffLeaderboard') }}</span>
         </h3>
-        <span class="text-xs text-slate-400 font-mono">{{ employeePerformance.length }} موظف</span>
+        <span class="text-xs text-slate-400 font-mono">{{ employeePerformance.length }}</span>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-start text-xs">
           <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
             <tr>
-              <th class="py-3 px-4 text-start">{{ t('tableEmployee') }}</th>
-              <th class="py-3 px-4 text-start">{{ t('tableDepartment') }}</th>
-              <th class="py-3 px-4 text-center">{{ t('totalTasks') }}</th>
-              <th class="py-3 px-4 text-center">{{ t('completedTasks') }}</th>
-              <th class="py-3 px-4 text-center">{{ t('inProgressTasks') }}</th>
-              <th class="py-3 px-4 text-center">{{ t('avgRate') }}</th>
+              <th class="py-3.5 px-4 text-start">#</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableEmployee') }}</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableDepartment') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('totalTasks') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('completedTasks') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('avgRate') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
             <tr 
-              v-for="(emp, idx) in employeePerformance" 
+              v-for="(emp, index) in employeePerformance" 
               :key="emp.user_id"
               class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
             >
+              <td class="py-3 px-4 font-mono text-center">
+                <span 
+                  :class="{
+                    'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-black': index === 0,
+                    'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200 font-bold': index === 1,
+                    'bg-amber-50 text-amber-700 dark:bg-amber-900/50 dark:text-amber-200': index === 2,
+                    'text-slate-400': index > 2,
+                  }"
+                  class="w-6 h-6 rounded-full inline-flex items-center justify-center text-xs"
+                >
+                  {{ index + 1 }}
+                </span>
+              </td>
+
               <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                <div class="flex items-center gap-2">
-                  <span 
-                    :class="idx === 0 ? 'bg-amber-400 text-amber-950 font-black' : (idx === 1 ? 'bg-slate-300 text-slate-800 font-bold' : (idx === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'))" 
-                    class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                  >
-                    {{ idx + 1 }}
-                  </span>
-                  <span>{{ emp.user_name }}</span>
-                </div>
+                {{ emp.user_name }}
               </td>
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400">
-                {{ emp.department_name }}
+
+              <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+                {{ emp.department_name || '-' }}
               </td>
-              <td class="py-3 px-4 text-center font-bold font-mono">
+
+              <td class="py-3 px-4 text-center font-mono font-bold text-slate-700 dark:text-slate-300">
                 {{ emp.total_tasks }}
               </td>
-              <td class="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+
+              <td class="py-3 px-4 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
                 {{ emp.completed_tasks }}
               </td>
-              <td class="py-3 px-4 text-center font-bold text-teal-600 dark:text-teal-400 font-mono">
-                {{ emp.in_progress_tasks }}
-              </td>
+
               <td class="py-3 px-4 text-center">
-                <div class="inline-flex items-center gap-2">
-                  <div class="w-20 bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                    <div 
-                      :class="emp.avg_progress === 100 ? 'bg-emerald-500' : 'bg-sky-600'" 
-                      class="h-full rounded-full transition-all" 
-                      :style="{ width: `${emp.avg_progress}%` }"
-                    ></div>
-                  </div>
-                  <span class="font-bold text-slate-800 dark:text-slate-200 font-mono text-[11px]">{{ emp.avg_progress }}%</span>
-                </div>
+                <span class="font-black text-sky-600 dark:text-sky-400 font-mono text-xs">{{ emp.avg_progress }}%</span>
               </td>
             </tr>
 
             <tr v-if="employeePerformance.length === 0">
-              <td colspan="6" class="py-10 text-center text-slate-400">
+              <td colspan="6" class="py-12 text-center text-slate-400">
                 {{ t('noTasksFound') }}
               </td>
             </tr>

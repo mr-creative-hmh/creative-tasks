@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref } from 'vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -127,7 +127,7 @@ function toggleStatus(user) {
           {{ t('navUsers') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          إدارة حسابات الكوادر الأكاديمية والميدانية وتحديد الأدوار والمسميات الوظيفية
+          {{ t('usersSubtitle') }}
         </p>
       </div>
 
@@ -406,7 +406,7 @@ function toggleStatus(user) {
               type="submit"
               class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-sm disabled:opacity-50 cursor-pointer transition-all"
             >
-              {{ userForm.processing ? 'جاري الحفظ...' : t('save') }}
+              {{ userForm.processing ? t('saving') : t('save') }}
             </button>
           </div>
         </form>

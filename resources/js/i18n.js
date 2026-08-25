@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue';
+﻿import { reactive, computed } from 'vue';
 
 const savedLocale = typeof window !== 'undefined' ? localStorage.getItem('app_locale') || 'ar' : 'ar';
 
@@ -32,20 +32,29 @@ export const translations = {
     delete: 'حذف',
     add: 'إضافة',
     confirm: 'تأكيد',
+    confirmDelete: 'هل أنت متأكد من الحذف؟',
+    avgProgress: 'المعدل العام',
     refresh: 'تحديث البيانات',
     filter: 'تصفية وبحث',
     search: 'بحث بالاسم، اللقب، أو البريد...',
     all: 'الكل',
     active: 'نشط',
     inactive: 'معطل',
+    present: 'حاضر',
     today: 'اليوم',
     thisWeek: 'هذا الأسبوع',
     thisMonth: 'هذا الشهر',
     dateFrom: 'من تاريخ',
     dateTo: 'إلى تاريخ',
     exportPdf: 'تصدير تقرير أداء PDF',
+    exportExcel: 'تصدير إكسل (XLSX)',
+    printReportPdf: 'طباعة التقرير / PDF',
+    quickPresets: 'الفترات الزمنية السريعة:',
+    allPeriods: 'كافة الفترات',
     preferences: 'التفضيلات',
-    googleMaps: 'خرائط جوجل',
+    googleMaps: 'خرائط Google',
+    yourDepartment: 'قسمك المعتمد',
+    allDeptsLabel: 'كافة الكليات والأقسام',
 
     // Statuses & Types
     statusCompleted: 'مكتملة',
@@ -53,6 +62,13 @@ export const translations = {
     statusPending: 'معلقة',
     typeAssigned: 'تكليف رسمي',
     typeSelf: 'عمل ذاتي',
+    taskDistribution: 'تكليف / ذاتي',
+    statusBreakdown: 'توزيع حالات المهام',
+    avgCompletion: 'معدل الإنجاز',
+    deptPerformance: 'مقارنة أداء الكليات والأقسام',
+    detailedFilteredTasks: 'السجل التفصيلي للمهام المصفاة',
+    tasksVisible: '{count} مهمة ظاهرة',
+    staffLeaderboard: 'لوحة تميز إنجاز الكوادر',
     
     // GPS & Shift Gating
     locationGateTitle: 'تأكيد الموقع الجغرافي وساعات الدوام',
@@ -69,8 +85,12 @@ export const translations = {
     gpsScanningTitle: 'جاري تحديد موقعك الجغرافي في الحرم الجامعي تلقائياً...',
     gpsScanningDesc: 'يقوم النظام باستشعار إحداثيات الموقع وتأكيد الحضور الميداني بالثواني لفتح المهام.',
     gpsLockDesc: 'التحقق الميداني التلقائي داخل الحرم الجامعي إجباري لاستخدام المنظومة.',
+    gpsVerifiedBadge: 'التحقق الجغرافي التلقائي (GPS Verified)',
+    gpsVerifiedDesc: 'تم تسجيل وتحديث تواجدك بالحرم الجامعي آلياً',
+    connectingGps: 'جاري الاتصال بالـ GPS...',
     retryGps: 'إعادة محاولة الاتصال بالـ GPS',
     demoCampusBtn: 'تأكيد الموقع داخل الحرم الجامعي (محاكاة / تجربة)',
+    demoSimCampusBtn: 'تأكيد بموقع الحرم الجامعي (تجربة واختبار)',
     autoTrackingActive: 'التتبع التلقائي نشط',
 
     // Navigation
@@ -83,6 +103,13 @@ export const translations = {
     navEmployeePortal: 'مهامي اليومية',
     navProfile: 'الملف الشخصي',
     
+    // Subtitles
+    dashboardSubtitle: 'متابعة مباشرة لمؤشرات الإنجاز، تكليفات الكوادر، وتأكيد التواجد الميداني بالـ GPS',
+    departmentsSubtitle: 'إدارة الهيكل التنظيمي، تعيين رؤساء الأقسام، وضبط أوقات الدوام الرسمي',
+    usersSubtitle: 'إدارة حسابات الكوادر الأكاديمية والميدانية وتحديد الأدوار والمسميات الوظيفية',
+    reportsSubtitle: 'تحليل مؤشرات الإنجاز الدورية، الرسوم البيانية، وتصدير التقارير الرسمية المعتمدة (PDF & XLSX)',
+    attendanceSubtitle: 'متابعة إحداثيات الحضور الميداني لكوادر الكليات والأقسام وتأكيد التواجد داخل الحرم الجامعي',
+
     // Users Management
     addUser: 'إضافة مستخدم / كادر جديد',
     userName: 'الاسم الكامل',
@@ -113,7 +140,9 @@ export const translations = {
     confirmPassword: 'تأكيد كلمة المرور الجديدة',
     systemPreferences: 'تفضيلات النظام',
     themeMode: 'المظهر (الوضع الليلي / النهاري)',
+    themeSub: 'التبديل بين النمط الليلي الفخم والنهاري',
     languagePref: 'لغة الواجهة (العربية / English)',
+    languageSub: 'لغة الواجهة (العربية / English)',
     todayAttendanceTime: 'وقت تسجيل الحضور اليوم:',
     savedSuccess: 'تم حفظ التغييرات بنجاح!',
     passwordChangedSuccess: 'تم تغيير كلمة المرور بنجاح!',
@@ -141,6 +170,7 @@ export const translations = {
     pendingTasks: 'مهام معلقة',
     avgRate: 'معدل الإنجاز الجامعي',
     attendanceToday: 'الكوادر الحاضرة ميدانياً اليوم',
+    attendanceTodayLabel: 'الحضور اليوم',
     recentActivity: 'أحدث التكليفات والأنشطة',
     recentLocations: 'آخر تسجيلات الحضور الجغرافي المباشر',
     
@@ -169,6 +199,11 @@ export const translations = {
     // Attendance & Map
     attendanceMapTitle: 'خريطة التتبع الميداني المباشر وإدارة حضور الكوادر بالـ GPS',
     adminManualLocationTitle: 'التعديل والتثبيت اليدوي لموقع الموظف من الخريطة (صلاحية المشرف):',
+    manualPinBtn: 'تثبيت موقع يدوي',
+    manualPinHint: '💡 يمكنك النقر على أي نقطة في الخريطة لتعبئة الإحداثيات تلقائياً',
+    campusMapTitle: 'خريطة التواجد الميداني المباشر (Campus Map)',
+    totalPinsCount: 'إجمالي النقاط المحددة: {count} كادر',
+    directCoordsCount: '📍 {count} إحداثيات مباشرة',
     targetEmployee: 'الموظف المستهدف',
     latitude: 'خط العرض (Latitude)',
     longitude: 'خط الطول (Longitude)',
@@ -182,6 +217,7 @@ export const translations = {
     tableLogTime: 'وقت الحضور',
     tableLogDate: 'التاريخ',
     tableMapAction: 'عرض على الخريطة',
+    noLogsFound: 'لا توجد تسجيلات حضور مطابقة لمعايير البحث في هذا اليوم.',
     mapHintAdmin: '💡 انقر في أي مكان على الخريطة لاختيار الإحداثيات وتثبيت موقع الموظف يدوياً',
     
     // Department Management
@@ -193,6 +229,13 @@ export const translations = {
     workEndTime: 'نهاية الدوام الرسمي',
     employeeCount: 'عدد الكوادر',
     
+    // Login & Demo
+    demoAccountsTitle: 'حسابات تجريبية للاختبار السريع (Demo Accounts):',
+    demoPresidency: 'رئاسة الجامعة',
+    demoHead: 'رئيس قسم IT',
+    demoStaff: 'مهندس شبكات',
+    footerCopyright: "جامعة المأمون • Al-Ma'moon University • بغداد، العراق",
+
     // Roles
     adminRole: 'رئاسة الجامعة (Super Admin)',
     headRole: 'رئيس قسم / عميد كلية (Head)',
@@ -221,20 +264,29 @@ export const translations = {
     delete: 'Delete',
     add: 'Add',
     confirm: 'Confirm',
+    confirmDelete: 'Are you sure you want to delete?',
+    avgProgress: 'Average Rate',
     refresh: 'Refresh',
     filter: 'Filter',
     search: 'Search by name, title, or email...',
     all: 'All',
     active: 'Active',
     inactive: 'Inactive',
+    present: 'Present',
     today: 'Today',
     thisWeek: 'This Week',
     thisMonth: 'This Month',
     dateFrom: 'Date From',
     dateTo: 'Date To',
     exportPdf: 'Print Performance PDF',
+    exportExcel: 'Export Excel (.xlsx)',
+    printReportPdf: 'Print Report / PDF',
+    quickPresets: 'Quick Date Presets:',
+    allPeriods: 'All Periods',
     preferences: 'Preferences',
     googleMaps: 'Google Maps',
+    yourDepartment: 'Your Department',
+    allDeptsLabel: 'All Faculties & Departments',
 
     // Statuses & Types
     statusCompleted: 'Completed',
@@ -242,6 +294,13 @@ export const translations = {
     statusPending: 'Pending',
     typeAssigned: 'Assigned',
     typeSelf: 'Self-Reported',
+    taskDistribution: 'Assigned vs Self-Reported',
+    statusBreakdown: 'Task Status Breakdown',
+    avgCompletion: 'Average Completion',
+    deptPerformance: 'Faculty & Department Performance',
+    detailedFilteredTasks: 'Detailed Filtered Tasks Log',
+    tasksVisible: '{count} visible tasks',
+    staffLeaderboard: 'Staff Performance Leaderboard',
     
     // GPS & Shift Gating
     locationGateTitle: 'Campus Geolocation & Shift Verification',
@@ -258,8 +317,12 @@ export const translations = {
     gpsScanningTitle: 'Scanning campus location automatically...',
     gpsScanningDesc: 'The system is detecting your campus location coordinates to verify attendance and unlock tasks.',
     gpsLockDesc: 'Automatic GPS presence verification on campus is strictly mandatory to unlock tasks.',
+    gpsVerifiedBadge: 'Automatic GPS Verified',
+    gpsVerifiedDesc: 'Your presence on campus was recorded automatically',
+    connectingGps: 'Connecting to GPS...',
     retryGps: 'Retry GPS Verification',
     demoCampusBtn: 'Confirm Campus Location (Simulation / Test)',
+    demoSimCampusBtn: 'Confirm Campus Location (Test Simulation)',
     autoTrackingActive: 'Auto-tracking active',
     
     // Navigation
@@ -272,6 +335,13 @@ export const translations = {
     navEmployeePortal: 'My Daily Tasks',
     navProfile: 'Profile & Settings',
     
+    // Subtitles
+    dashboardSubtitle: 'Real-time tracking of KPIs, staff delegations, and GPS campus presence',
+    departmentsSubtitle: 'Manage organizational structure, appoint department heads, and configure working shifts',
+    usersSubtitle: 'Manage staff accounts, user permissions, roles, and academic/job titles',
+    reportsSubtitle: 'Periodic performance analytics, visual charts, and executive export (PDF & XLSX)',
+    attendanceSubtitle: 'Real-time GPS tracking and campus presence verification for faculty and staff',
+
     // Users Management
     addUser: 'Add New User / Staff',
     userName: 'Full Name',
@@ -302,7 +372,9 @@ export const translations = {
     confirmPassword: 'Confirm New Password',
     systemPreferences: 'System Preferences',
     themeMode: 'Theme (Dark / Light Mode)',
+    themeSub: 'Switch between Dark and Light mode theme',
     languagePref: 'Interface Language (Arabic / English)',
+    languageSub: 'Interface Language (العربية / English)',
     todayAttendanceTime: 'Today Attendance Time:',
     savedSuccess: 'Changes saved successfully!',
     passwordChangedSuccess: 'Password updated successfully!',
@@ -330,6 +402,7 @@ export const translations = {
     pendingTasks: 'Pending Tasks',
     avgRate: 'University Avg Completion',
     attendanceToday: 'Staff on Campus Today',
+    attendanceTodayLabel: 'On Campus Today',
     recentActivity: 'Recent Task Activity',
     recentLocations: 'Recent Live Check-ins',
     
@@ -358,6 +431,11 @@ export const translations = {
     // Attendance & Map
     attendanceMapTitle: 'Live Field Tracking Map & GPS Staff Attendance Management',
     adminManualLocationTitle: 'Manual Staff Location Override via Map (Admin Only):',
+    manualPinBtn: 'Manual GPS Pin',
+    manualPinHint: '💡 Click anywhere on the map to autofill coordinates',
+    campusMapTitle: 'Live Campus Tracking Map',
+    totalPinsCount: 'Total Plotted Coordinates: {count} Staff',
+    directCoordsCount: '📍 {count} Live Coordinates',
     targetEmployee: 'Target Staff Member',
     latitude: 'Latitude',
     longitude: 'Longitude',
@@ -371,6 +449,7 @@ export const translations = {
     tableLogTime: 'Check-in Time',
     tableLogDate: 'Date',
     tableMapAction: 'View on Map',
+    noLogsFound: 'No attendance records found matching current search criteria for this day.',
     mapHintAdmin: '💡 Click anywhere on the map to manually pick and update staff coordinates',
     
     // Department Management
@@ -382,6 +461,13 @@ export const translations = {
     workEndTime: 'Shift End Time',
     employeeCount: 'Staff Count',
     
+    // Login & Demo
+    demoAccountsTitle: 'Demo Quick Login Accounts:',
+    demoPresidency: 'University Presidency (Admin)',
+    demoHead: 'IT Dept Head',
+    demoStaff: 'Network Engineer',
+    footerCopyright: "Al-Ma'moon University • Baghdad, Iraq",
+
     // Roles
     adminRole: 'University Presidency (Super Admin)',
     headRole: 'Faculty Dean / Dept Head',
@@ -401,8 +487,12 @@ export function t(key, params = {}) {
 export function setLocale(lang) {
   if (['ar', 'en'].includes(lang)) {
     i18nState.locale = lang;
-    localStorage.setItem('app_locale', lang);
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('app_locale', lang);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
+    }
   }
 }

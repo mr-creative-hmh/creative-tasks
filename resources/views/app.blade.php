@@ -13,9 +13,10 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    <!-- Theme Initializer (Anti-FOUC) -->
+    <!-- Language & Theme Initializer (Anti-FOUC & Persistence across F5) -->
     <script>
         (function() {
+            // Theme initialization
             const savedTheme = localStorage.getItem('app_theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
@@ -23,6 +24,11 @@
             } else if (savedTheme === 'light') {
                 document.documentElement.classList.remove('dark');
             }
+
+            // Language & Direction initialization
+            const savedLocale = localStorage.getItem('app_locale') || 'ar';
+            document.documentElement.lang = savedLocale;
+            document.documentElement.dir = savedLocale === 'ar' ? 'rtl' : 'ltr';
         })();
     </script>
 

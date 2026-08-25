@@ -1,9 +1,19 @@
 <script setup>
+import { ref } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
 import { t } from '@/i18n';
-import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
-import { GraduationCap, Lock, Mail, Shield, AlertCircle, ArrowRight, UserCheck } from 'lucide-vue-next';
+import LanguageToggle from '@/Components/LanguageToggle.vue';
+import {
+  GraduationCap,
+  Mail,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Sparkles,
+  UserCheck
+} from 'lucide-vue-next';
 
 const form = useForm({
   email: '',
@@ -24,9 +34,9 @@ function fillDemo(email, password) {
 </script>
 
 <template>
-  <Head :title="t('loginTitle')" />
+  <Head :title="t('signIn')" />
 
-  <div class="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-slate-200 dark:from-slate-900 dark:via-sky-950 dark:to-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden transition-colors duration-200 selection:bg-sky-500 selection:text-white">
+  <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative overflow-hidden">
     <!-- Ambient Background Lighting -->
     <div class="absolute top-0 right-1/4 w-96 h-96 bg-sky-500/10 dark:bg-sky-600/20 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-teal-500/10 dark:bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -40,7 +50,7 @@ function fillDemo(email, password) {
           </div>
           <div>
             <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-              جامعة المأمون
+              {{ t('appName') }}
             </h1>
             <p class="text-[11px] text-sky-600 dark:text-sky-300 font-medium">Al-Ma'moon University</p>
           </div>
@@ -114,7 +124,7 @@ function fillDemo(email, password) {
           <button
             :disabled="form.processing"
             type="submit"
-            class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            class="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             <span>{{ form.processing ? t('signingIn') : t('signIn') }}</span>
             <ArrowRight class="w-4 h-4 rtl:rotate-180" />
@@ -125,34 +135,34 @@ function fillDemo(email, password) {
         <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/80">
           <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2.5 text-center flex items-center justify-center gap-1.5">
             <UserCheck class="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-            <span>حسابات تجريبية للاختبار السريع (Demo Accounts):</span>
+            <span>{{ t('demoAccountsTitle') }}</span>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
             <button
               @click="fillDemo('admin@almamonuc.edu.iq', 'password')"
               type="button"
-              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95"
+              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95 cursor-pointer"
             >
-              <div class="font-bold text-sky-600 dark:text-sky-400 mb-0.5">رئاسة الجامعة</div>
+              <div class="font-bold text-sky-600 dark:text-sky-400 mb-0.5">{{ t('demoPresidency') }}</div>
               <div class="text-[9px] text-slate-400 dark:text-slate-500">Super Admin</div>
             </button>
 
             <button
               @click="fillDemo('head.it@almamonuc.edu.iq', 'password')"
               type="button"
-              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95"
+              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95 cursor-pointer"
             >
-              <div class="font-bold text-teal-600 dark:text-teal-400 mb-0.5">رئيس قسم IT</div>
+              <div class="font-bold text-teal-600 dark:text-teal-400 mb-0.5">{{ t('demoHead') }}</div>
               <div class="text-[9px] text-slate-400 dark:text-slate-500">Head of IT</div>
             </button>
 
             <button
               @click="fillDemo('ali.it@almamonuc.edu.iq', 'password')"
               type="button"
-              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95"
+              class="px-2 py-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-slate-200 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700/60 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-all text-center leading-tight active:scale-95 cursor-pointer"
             >
-              <div class="font-bold text-amber-600 dark:text-amber-400 mb-0.5">مهندس شبكات</div>
+              <div class="font-bold text-amber-600 dark:text-amber-400 mb-0.5">{{ t('demoStaff') }}</div>
               <div class="text-[9px] text-slate-400 dark:text-slate-500">Field Staff</div>
             </button>
           </div>
@@ -161,7 +171,7 @@ function fillDemo(email, password) {
 
       <!-- Footer info -->
       <div class="text-center mt-6 text-xs text-slate-400 dark:text-slate-500">
-        جامعة المأمون • Al-Ma'moon University • بغداد، العراق • {{ new Date().getFullYear() }}
+        {{ t('footerCopyright') }} • {{ new Date().getFullYear() }}
       </div>
     </div>
   </div>
