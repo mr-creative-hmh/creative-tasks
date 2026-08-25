@@ -63,6 +63,8 @@ const props = defineProps({
   }
 });
 
+const totalRecords = computed(() => props.tasks?.length || props.summary?.total || 0);
+
 const filterForm = ref({
   date_from: props.filters.date_from || '',
   date_to: props.filters.date_to || '',

@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed } from 'vue';
 import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
@@ -25,7 +25,10 @@ import {
   Upload,
   Sparkles,
   FileText,
-  AlertCircle
+  AlertCircle,
+  KeyRound,
+  Copy,
+  Check
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -74,6 +77,15 @@ const importForm = useForm({
   file: null,
 });
 
+// Reset Password State
+const isResetPasswordModalOpen = ref(false);
+const resetPasswordUser = ref(null);
+const passwordCopied = ref(false);
+
+const resetPasswordForm = useForm({
+  password: '',
+});
+
 function applyFilters() {
   const clean = {};
   for (const [k, v] of Object.entries(filterForm.value)) {
@@ -103,6 +115,39 @@ function openEditModal(user) {
   userForm.department_id = user.department_id || '';
   userForm.is_active = !!user.is_active;
   isModalOpen.value = true;
+}
+
+function openResetPasswordModal(user) {
+  resetPasswordUser.value = user;
+  resetPasswordForm.reset();
+  generatePassword();
+  passwordCopied.value = false;
+  isResetPasswordModalOpen.value = true;
+}
+
+function generatePassword() {
+  const randomDigits = Math.floor(1000 + Math.random() * 9000);
+  resetPasswordForm.password = `Mamon@${randomDigits}`;
+}
+
+function copyPassword() {
+  if (navigator.clipboard && resetPasswordForm.password) {
+    navigator.clipboard.writeText(resetPasswordForm.password);
+    passwordCopied.value = true;
+    setTimeout(() => (passwordCopied.value = false), 2000);
+  }
+}
+
+function submitResetPassword() {
+  if (!resetPasswordUser.value) return;
+
+  resetPasswordForm.put(`/users/${resetPasswordUser.value.id}/reset-password`, {
+    preserveScroll: true,
+    onSuccess: () => {
+      isResetPasswordModalOpen.value = false;
+      resetPasswordForm.reset();
+    }
+  });
 }
 
 function submitUser() {
@@ -166,227 +211,240 @@ function submitImport() {
   <Head :title="t('navUsers')" />
 
   <AppLayout>
-    <!-- Unified Page Banner -->
-    <PageBanner
-      :title="t('navUsers')"
-      :subtitle="t('usersSubtitle')"
-      :badge="t('totalUsers') + ': ' + (users.total || users.data.length)"
-      :icon="Users"
-    >
-      <template #actions>
-        <!-- Download Template Button -->
-        <a
-          href="/users/template"
-          target="_blank"
-          class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
-          :title="t('downloadTemplate')"
-        >
-          <Download class="w-4 h-4 text-accent" />
-          <span>{{ t('downloadTemplate') }}</span>
-        </a>
+    <div class="w-full space-y-6">
+      <!-- Unified Page Banner -->
+      <PageBanner
+        :title="t('navUsers')"
+        :subtitle="t('usersSubtitle')"
+        :badge="t('totalUsers') + ': ' + (users.total || users.data.length)"
+        :icon="Users"
+      >
+        <template #actions>
+          <!-- Download Template Button -->
+          <a
+            href="/users/template"
+            target="_blank"
+            class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
+            :title="t('downloadTemplate')"
+          >
+            <Download class="w-4 h-4 text-accent" />
+            <span>{{ t('downloadTemplate') }}</span>
+          </a>
 
-        <!-- Import Excel Button -->
-        <button
-          @click="isImportModalOpen = true"
-          type="button"
-          class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-        >
-          <FileSpreadsheet class="w-4 h-4" />
-          <span>{{ t('importExcel') }}</span>
-        </button>
+          <!-- Import Excel Button -->
+          <button
+            @click="isImportModalOpen = true"
+            type="button"
+            class="h-10 inline-flex items-center justify-center gap-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <FileSpreadsheet class="w-4 h-4" />
+            <span>{{ t('importExcel') }}</span>
+          </button>
 
-        <!-- Add Single User Button -->
-        <button
-          @click="openCreateModal"
-          type="button"
-          class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer"
-        >
-          <UserPlus class="w-4 h-4" />
-          <span>{{ t('addUser') }}</span>
-        </button>
-      </template>
-    </PageBanner>
+          <!-- Add Single User Button -->
+          <button
+            @click="openCreateModal"
+            type="button"
+            class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer"
+          >
+            <UserPlus class="w-4 h-4" />
+            <span>{{ t('addUser') }}</span>
+          </button>
+        </template>
+      </PageBanner>
 
-    <!-- Filters Bar -->
-    <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <!-- Search -->
-        <div class="relative">
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('search') }}</label>
+      <!-- Filters Bar -->
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Search -->
           <div class="relative">
-            <input
-              v-model="filterForm.search"
-              @input="applyFilters"
-              type="text"
-              :placeholder="t('search')"
-              class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-9 pe-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
-            />
-            <Search class="w-4 h-4 text-slate-400 absolute start-3 top-3" />
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('search') }}</label>
+            <div class="relative">
+              <input
+                v-model="filterForm.search"
+                @input="applyFilters"
+                type="text"
+                :placeholder="t('search')"
+                class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-9 pe-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
+              />
+              <Search class="w-4 h-4 text-slate-400 absolute start-3 top-3" />
+            </div>
           </div>
-        </div>
 
-        <!-- Role Filter -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('role') }}</label>
-          <select
-            v-model="filterForm.role"
-            @change="applyFilters"
-            class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
-          >
-            <option value="">{{ t('allRoles') }}</option>
-            <option value="admin">{{ t('adminRole') }}</option>
-            <option value="head">{{ t('headRole') }}</option>
-            <option value="employee">{{ t('employeeRole') }}</option>
-          </select>
-        </div>
-
-        <!-- Department Filter -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
-          <select
-            v-model="filterForm.department_id"
-            @change="applyFilters"
-            class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
-          >
-            <option value="">{{ t('allDepartments') }}</option>
-            <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-              {{ dept.name }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Stats Counter -->
-        <div class="h-10 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-3 rounded-xl border border-slate-100 dark:border-slate-800 self-end">
+          <!-- Role Filter -->
           <div>
-            <span class="text-[10px] text-slate-400 font-semibold">{{ t('totalUsers') }}:</span>
-            <span class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono ms-1">{{ users.total || users.data.length }}</span>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('role') }}</label>
+            <select
+              v-model="filterForm.role"
+              @change="applyFilters"
+              class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
+            >
+              <option value="">{{ t('allRoles') }}</option>
+              <option value="admin">{{ t('adminRole') }}</option>
+              <option value="head">{{ t('headRole') }}</option>
+              <option value="employee">{{ t('employeeRole') }}</option>
+            </select>
           </div>
-          <div class="text-end">
-            <span class="text-[10px] text-emerald-500 font-semibold">{{ t('activeUsers') }}:</span>
-            <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono ms-1">
-              {{ users.data.filter(u => u.is_active).length }}
-            </span>
+
+          <!-- Department Filter -->
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
+            <select
+              v-model="filterForm.department_id"
+              @change="applyFilters"
+              class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
+            >
+              <option value="">{{ t('allDepartments') }}</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Stats Counter -->
+          <div class="h-10 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-3 rounded-xl border border-slate-100 dark:border-slate-800 self-end">
+            <div>
+              <span class="text-[10px] text-slate-400 font-semibold">{{ t('totalUsers') }}:</span>
+              <span class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono ms-1">{{ users.total || users.data.length }}</span>
+            </div>
+            <div class="text-end">
+              <span class="text-[10px] text-emerald-500 font-semibold">{{ t('activeUsers') }}:</span>
+              <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono ms-1">
+                {{ users.data.filter(u => u.is_active).length }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Users Table Container -->
-    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-start text-xs">
-          <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
-            <tr>
-              <th class="px-5 py-4 text-start">{{ t('userName') }}</th>
-              <th class="px-5 py-4 text-start">{{ t('email') }}</th>
-              <th class="px-5 py-4 text-start">{{ t('role') }}</th>
-              <th class="px-5 py-4 text-start">{{ t('department') }}</th>
-              <th class="px-5 py-4 text-center">{{ t('status') }}</th>
-              <th class="px-5 py-4 text-center">{{ t('actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-            <tr
-              v-for="u in users.data"
-              :key="u.id"
-              class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
-            >
-              <!-- Name & Job Title -->
-              <td class="px-5 py-4">
-                <div class="font-bold text-slate-900 dark:text-white">{{ u.name }}</div>
-                <div v-if="u.job_title" class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">
-                  {{ u.job_title }}
-                </div>
-              </td>
+      <!-- Users Table Container -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-start text-xs">
+            <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
+              <tr>
+                <th class="px-5 py-4 text-start">{{ t('userName') }}</th>
+                <th class="px-5 py-4 text-start">{{ t('email') }}</th>
+                <th class="px-5 py-4 text-start">{{ t('role') }}</th>
+                <th class="px-5 py-4 text-start">{{ t('department') }}</th>
+                <th class="px-5 py-4 text-center">{{ t('status') }}</th>
+                <th class="px-5 py-4 text-center">{{ t('actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr
+                v-for="u in users.data"
+                :key="u.id"
+                class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <!-- Name & Job Title -->
+                <td class="px-5 py-4">
+                  <div class="font-bold text-slate-900 dark:text-white">{{ u.name }}</div>
+                  <div v-if="u.job_title" class="text-[10px] text-accent font-semibold mt-0.5">
+                    {{ u.job_title }}
+                  </div>
+                </td>
 
-              <!-- Email -->
-              <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                {{ u.email }}
-              </td>
+                <!-- Email -->
+                <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                  {{ u.email }}
+                </td>
 
-              <!-- Role Badge -->
-              <td class="px-5 py-4">
-                <span
-                  :class="{
-                    'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60': u.role === 'admin',
-                    'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60': u.role === 'head',
-                    'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60': u.role === 'employee',
-                  }"
-                  class="whitespace-nowrap inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
-                >
-                  {{ t(u.role + 'Role') }}
-                </span>
-              </td>
-
-              <!-- Department -->
-              <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                {{ u.department?.name || '-' }}
-              </td>
-
-              <!-- Active Status -->
-              <td class="px-5 py-4 text-center">
-                <button
-                  @click="toggleStatus(u)"
-                  type="button"
-                  :class="u.is_active ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/50'"
-                  class="whitespace-nowrap inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer"
-                >
-                  <CheckCircle2 v-if="u.is_active" class="w-3 h-3" />
-                  <XCircle v-else class="w-3 h-3" />
-                  <span>{{ u.is_active ? t('active') : t('inactive') }}</span>
-                </button>
-              </td>
-
-              <!-- Actions (Cannot delete self) -->
-              <td class="px-5 py-4 text-center">
-                <div class="inline-flex items-center gap-1.5">
-                  <button
-                    @click="openEditModal(u)"
-                    type="button"
-                    class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
-                    :title="t('edit')"
-                  >
-                    <Edit2 class="w-4 h-4" />
-                  </button>
-
-                  <!-- Delete Button ONLY if not current logged-in user -->
-                  <button
-                    v-if="u.id !== authUser.id"
-                    @click="deleteUser(u)"
-                    type="button"
-                    class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer transition-colors"
-                    :title="t('delete')"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-
+                <!-- Role Badge -->
+                <td class="px-5 py-4">
                   <span
-                    v-else
-                    class="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/60 text-[10px] font-bold text-sky-600 dark:text-sky-400 select-none"
-                    :title="t('cannotDeleteSelf')"
+                    :class="{
+                      'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60': u.role === 'admin',
+                      'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60': u.role === 'head',
+                      'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60': u.role === 'employee',
+                    }"
+                    class="whitespace-nowrap inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
                   >
-                    {{ t('cannotDeleteSelf') }}
+                    {{ t(u.role + 'Role') }}
                   </span>
-                </div>
-              </td>
-            </tr>
+                </td>
 
-            <tr v-if="users.data.length === 0">
-              <td colspan="6" class="py-12 text-center text-slate-400">
-                {{ t('noTasksFound') }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <!-- Department -->
+                <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
+                  {{ u.department?.name || '-' }}
+                </td>
+
+                <!-- Active Status -->
+                <td class="px-5 py-4 text-center">
+                  <button
+                    @click="toggleStatus(u)"
+                    type="button"
+                    :class="u.is_active ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/50'"
+                    class="whitespace-nowrap inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer"
+                  >
+                    <CheckCircle2 v-if="u.is_active" class="w-3 h-3" />
+                    <XCircle v-else class="w-3 h-3" />
+                    <span>{{ u.is_active ? t('active') : t('inactive') }}</span>
+                  </button>
+                </td>
+
+                <!-- Actions: Edit, Reset Password, Delete -->
+                <td class="px-5 py-4 text-center">
+                  <div class="inline-flex items-center gap-1.5">
+                    <!-- Edit Button -->
+                    <button
+                      @click="openEditModal(u)"
+                      type="button"
+                      class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                      :title="t('edit')"
+                    >
+                      <Edit2 class="w-4 h-4" />
+                    </button>
+
+                    <!-- Reset Password Button -->
+                    <button
+                      @click="openResetPasswordModal(u)"
+                      type="button"
+                      class="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 cursor-pointer transition-colors"
+                      :title="t('resetPassword')"
+                    >
+                      <KeyRound class="w-4 h-4" />
+                    </button>
+
+                    <!-- Delete Button ONLY if not current logged-in user -->
+                    <button
+                      v-if="u.id !== authUser.id"
+                      @click="deleteUser(u)"
+                      type="button"
+                      class="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer transition-colors"
+                      :title="t('delete')"
+                    >
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+
+                    <span
+                      v-else
+                      class="px-2 py-0.5 rounded-md bg-accent-light border border-accent/20 text-[10px] font-bold text-accent select-none"
+                      :title="t('cannotDeleteSelf')"
+                    >
+                      {{ t('cannotDeleteSelf') }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr v-if="users.data.length === 0">
+                <td colspan="6" class="py-12 text-center text-slate-400">
+                  {{ t('noTasksFound') }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Component -->
+        <Pagination
+          :links="users.links"
+          :from="users.from"
+          :to="users.to"
+          :total="users.total"
+        />
       </div>
-
-      <!-- Pagination Component -->
-      <Pagination
-        :links="users.links"
-        :from="users.from"
-        :to="users.to"
-        :total="users.total"
-      />
     </div>
 
     <!-- Create / Edit User Modal -->
@@ -502,9 +560,88 @@ function submitImport() {
             <button
               :disabled="userForm.processing"
               type="submit"
-              class="h-10 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer transition-all flex items-center justify-center"
+              class="h-10 px-5 rounded-xl bg-accent bg-accent-hover text-white font-bold shadow-accent active:scale-95 disabled:opacity-50 cursor-pointer transition-all flex items-center justify-center"
             >
               {{ userForm.processing ? t('saving') : t('save') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div v-if="isResetPasswordModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="isResetPasswordModalOpen = false">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl relative" @click.stop>
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <KeyRound class="w-4 h-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                {{ t('resetPassword') }}
+              </h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">{{ resetPasswordUser?.name }}</p>
+            </div>
+          </div>
+          <button @click="isResetPasswordModalOpen = false" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <form @submit.prevent="submitResetPassword" class="space-y-4 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              {{ t('newPasswordPrompt') }} *
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="resetPasswordForm.password"
+                type="text"
+                required
+                class="flex-1 h-10 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-mono text-xs outline-none focus:border-sky-500"
+              />
+              <button
+                @click="copyPassword"
+                type="button"
+                class="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                :title="passwordCopied ? 'تم النسخ' : 'نسخ كلمة المرور'"
+              >
+                <Check v-if="passwordCopied" class="w-3.5 h-3.5 text-emerald-500" />
+                <Copy v-else class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div v-if="resetPasswordForm.errors.password" class="text-rose-500 text-[10px] mt-1">
+              {{ resetPasswordForm.errors.password }}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button
+              @click="generatePassword"
+              type="button"
+              class="text-xs text-accent font-bold hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Sparkles class="w-3.5 h-3.5" />
+              <span>{{ t('generateRandomPassword') }}</span>
+            </button>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              @click="isResetPasswordModalOpen = false"
+              type="button"
+              class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              {{ t('cancel') }}
+            </button>
+            <button
+              :disabled="resetPasswordForm.processing || !resetPasswordForm.password"
+              type="submit"
+              class="h-10 px-5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 active:scale-95 disabled:opacity-50 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+            >
+              <KeyRound class="w-3.5 h-3.5" />
+              <span>{{ resetPasswordForm.processing ? t('saving') : t('resetPassword') }}</span>
             </button>
           </div>
         </form>
@@ -535,18 +672,18 @@ function submitImport() {
 
         <div class="space-y-5 text-xs">
           <!-- Step 1: Download Template -->
-          <div class="p-4 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200/70 dark:border-sky-800/50">
+          <div class="p-4 rounded-2xl bg-accent-light border border-accent/20">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="font-bold text-sky-900 dark:text-sky-200 text-xs">{{ t('templateStep') }}</div>
-                <p class="text-[11px] text-sky-700/80 dark:text-sky-300/80 mt-1 leading-relaxed">
+                <div class="font-bold text-slate-800 dark:text-slate-100 text-xs">{{ t('templateStep') }}</div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                   {{ t('templateStepDesc') }}
                 </p>
               </div>
               <a
                 href="/users/template"
                 target="_blank"
-                class="shrink-0 h-9 inline-flex items-center gap-1.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
+                class="shrink-0 h-9 inline-flex items-center gap-1.5 px-3 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
               >
                 <Download class="w-3.5 h-3.5" />
                 <span>{{ t('downloadTemplate') }}</span>

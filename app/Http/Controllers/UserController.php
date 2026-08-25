@@ -120,6 +120,19 @@ class UserController extends Controller
         return back()->with('success', $msg);
     }
 
+    public function resetPassword(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+        ]);
+
+        return back()->with('success', 'تم إعادة تعيين كلمة المرور بنجاح للمستخدم: ' . $user->name);
+    }
+
     /**
      * Download an official Excel template pre-populated with active departments and instructions.
      */

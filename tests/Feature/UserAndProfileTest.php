@@ -95,4 +95,19 @@ class UserAndProfileTest extends TestCase
         $response->assertRedirect('/profile');
         $this->assertTrue(Hash::check('new-secret-123', $user->fresh()->password));
     }
+
+    public function test_admin_can_reset_user_password(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $targetUser = User::factory()->create([
+            'password' => Hash::make('old-password-123'),
+        ]);
+
+        $response = $this->actingAs($admin)->from('/users')->put("/users/{$targetUser->id}/reset-password", [
+            'password' => 'new-reset-password-2026',
+        ]);
+
+        $response->assertRedirect('/users');
+        $this->assertTrue(Hash::check('new-reset-password-2026', $targetUser->fresh()->password));
+    }
 }

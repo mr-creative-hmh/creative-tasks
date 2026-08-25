@@ -176,26 +176,25 @@ function deleteTask(task) {
   <Head :title="t('navTasks')" />
 
   <AppLayout>
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ t('tasksTitle') }}
-        </h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {{ t('tasksDesc') }}
-        </p>
-      </div>
-
-      <button
-        @click="openCreateModal"
-        type="button"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+    <div class="w-full space-y-6">
+      <!-- Unified Page Banner -->
+      <PageBanner
+        :title="t('tasksPageTitle')"
+        :subtitle="t('tasksDesc')"
+        :badge="t('totalTasks') + ': ' + (tasks.total || tasks.data.length)"
+        :icon="CheckSquare"
       >
-        <Plus class="w-4 h-4" />
-        <span>{{ t('assignNewTask') }}</span>
-      </button>
-    </div>
+        <template #actions>
+          <button
+            @click="openCreateModal"
+            type="button"
+            class="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer"
+          >
+            <Plus class="w-4 h-4" />
+            <span>{{ t('assignNewTask') }}</span>
+          </button>
+        </template>
+      </PageBanner>
 
     <!-- Filters Bar -->
     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs mb-6">
@@ -516,5 +515,6 @@ function deleteTask(task) {
         </form>
       </div>
     </div>
+      </div>
   </AppLayout>
 </template>

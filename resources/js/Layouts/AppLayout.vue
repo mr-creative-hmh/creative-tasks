@@ -231,7 +231,7 @@ function logout() {
         <div class="flex items-center justify-between gap-2 px-1">
           <span class="text-[10px] font-semibold text-slate-400">{{ t('preferences') }}</span>
           <div class="flex items-center gap-1.5">
-            <AccentPicker />
+            <AccentPicker placement="top" />
             <ThemeToggle />
             <LanguageToggle />
           </div>

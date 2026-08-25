@@ -1,7 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { Palette, Check } from 'lucide-vue-next';
+import { Palette, Check, X } from 'lucide-vue-next';
 import { t } from '@/i18n';
+
+const props = defineProps({
+  placement: {
+    type: String,
+    default: 'bottom' // 'top' | 'bottom'
+  }
+});
 
 const isOpen = ref(false);
 const currentAccent = ref('sky');
@@ -32,42 +39,49 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative inline-block">
     <!-- Trigger Button -->
     <button
       @click="isOpen = !isOpen"
       type="button"
-      class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center relative active:scale-95 shadow-xs"
+      class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center relative active:scale-95 shadow-2xs"
       :title="t('accentColor')"
     >
       <Palette class="w-4 h-4" />
       <!-- Small color indicator dot -->
       <span
-        class="absolute bottom-1 end-1 w-2 h-2 rounded-full border border-white dark:border-slate-900 shadow-xs"
+        class="absolute bottom-1 end-1 w-2 h-2 rounded-full border border-white dark:border-slate-900 shadow-2xs"
         :style="{ backgroundColor: colors.find(c => c.id === currentAccent)?.bg || '#0284c7' }"
       ></span>
     </button>
 
-    <!-- Palette Dropdown Popover -->
+    <!-- Backdrop closer -->
     <div
       v-if="isOpen"
       class="fixed inset-0 z-40"
       @click="isOpen = false"
     ></div>
 
+    <!-- Compact Palette Popover -->
     <div
       v-if="isOpen"
-      class="absolute end-0 mt-2 z-50 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl w-56 animate-fade-in"
+      :class="[
+        placement === 'top' ? 'bottom-full mb-2 end-0' : 'top-full mt-2 end-0',
+      ]"
+      class="absolute z-50 p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl w-48 animate-fade-in"
       @click.stop
     >
-      <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100 dark:border-slate-800">
-        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <Palette class="w-3.5 h-3.5 text-slate-400" />
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+        <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <Palette class="w-3.5 h-3.5 text-accent" />
           {{ t('accentColor') }}
         </span>
+        <button @click="isOpen = false" class="p-0.5 rounded-md text-slate-400 hover:text-slate-600">
+          <X class="w-3 h-3" />
+        </button>
       </div>
 
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-4 gap-1.5">
         <button
           v-for="color in colors"
           :key="color.id"
@@ -75,12 +89,12 @@ onMounted(() => {
           type="button"
           :title="t(color.name)"
           :class="[
-            currentAccent === color.id ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ' + color.ring : 'opacity-80 hover:opacity-100 hover:scale-105',
+            currentAccent === color.id ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ' + color.ring : 'opacity-85 hover:opacity-100 hover:scale-105',
           ]"
-          class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs relative"
+          class="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs relative"
           :style="{ backgroundColor: color.bg }"
         >
-          <Check v-if="currentAccent === color.id" class="w-4 h-4 text-white" />
+          <Check v-if="currentAccent === color.id" class="w-3.5 h-3.5 text-white" />
         </button>
       </div>
     </div>

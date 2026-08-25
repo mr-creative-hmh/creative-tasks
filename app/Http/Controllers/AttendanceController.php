@@ -73,6 +73,8 @@ class AttendanceController extends Controller
                 'user_id' => $userId,
                 'date' => $date,
             ],
+            'canManualEdit' => in_array($user->role, ['admin', 'head']),
+            'allEmployees' => $employees,
             'stats' => [
                 'total_present_today' => AttendanceLog::whereDate('log_date', Carbon::today())->distinct('user_id')->count('user_id'),
                 'total_employees' => User::where('role', 'employee')->count(),
