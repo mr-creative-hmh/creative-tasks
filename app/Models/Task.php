@@ -24,7 +24,7 @@ class Task extends Model
 
     protected $casts = [
         'progress' => 'integer',
-        'task_date' => 'date',
+        'task_date' => 'date:Y-m-d',
     ];
 
     public function department(): BelongsTo

@@ -21,7 +21,7 @@ class AttendanceLog extends Model
     protected $casts = [
         'latitude' => 'float',
         'longitude' => 'float',
-        'log_date' => 'date',
+        'log_date' => 'date:Y-m-d',
     ];
 
     public function user(): BelongsTo

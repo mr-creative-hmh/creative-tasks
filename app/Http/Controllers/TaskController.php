@@ -96,7 +96,7 @@ class TaskController extends Controller
             'progress' => 0,
             'task_type' => 'assigned',
             'status' => 'pending',
-            'task_date' => $validated['task_date'],
+            'task_date' => Carbon::parse($validated['task_date'])->toDateString(),
         ]);
 
         return back()->with('success', 'تم تعيين المهمة بنجاح.');
@@ -115,13 +115,40 @@ class TaskController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'progress' => ['required', 'integer', 'min:0', 'max:100'],
-            'status' => ['required', 'in:pending,in_progress,completed'],
+            'status' => ['nullable', 'in:pending,in_progress,completed'],
             'task_date' => ['required', 'date'],
         ]);
 
-        $task->update($validated);
+        $progress = (int) $validated['progress'];
+        
+        // Compute status automatically from progress unless explicitly set
+        $status = $validated['status'] ?? null;
+        if (!$status) {
+            if ($progress === 100) {
+                $status = 'completed';
+            } elseif ($progress > 0) {
+                $status = 'in_progress';
+            } else {
+                $status = 'pending';
+            }
+        } else {
+            // Keep status synchronized with progress if progress is 100 or 0
+            if ($progress === 100 && $status !== 'completed') {
+                $status = 'completed';
+            } elseif ($progress === 0 && $status !== 'pending') {
+                $status = 'pending';
+            }
+        }
 
-        return back()->with('success', 'تم تعديل المهمة بنجاح.');
+        $task->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'progress' => $progress,
+            'status' => $status,
+            'task_date' => Carbon::parse($validated['task_date'])->toDateString(),
+        ]);
+
+        return back()->with('success', 'تم تعديل المهمة وتحديث حالتها بنجاح.');
     }
 
     public function destroy(Request $request, Task $task): RedirectResponse

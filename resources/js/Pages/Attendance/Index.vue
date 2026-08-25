@@ -45,7 +45,7 @@ const props = defineProps({
 const filterForm = ref({
   department_id: props.filters.department_id || '',
   user_id: props.filters.user_id || '',
-  date: props.filters.date || new Date().toISOString().split('T')[0],
+  date: props.filters.date ? props.filters.date.split('T')[0] : new Date().toISOString().split('T')[0],
 });
 
 // Admin Manual Update State
@@ -70,7 +70,7 @@ function onMapCoordinateSelected(coords) {
 
 async function saveManualAttendance() {
   if (!manualForm.value.user_id) {
-    manualErrorMsg.value = 'يرجى اختيار الموظف أولاً.';
+    manualErrorMsg.value = t('selectEmployeePlaceholder');
     return;
   }
 
@@ -86,12 +86,12 @@ async function saveManualAttendance() {
       date: manualForm.value.date,
     });
 
-    manualSuccessMsg.value = res.data.message || 'تم تحديث موقع الموظف يدوياً بنجاح!';
+    manualSuccessMsg.value = res.data.message || t('savedSuccess');
     setTimeout(() => {
       router.reload({ preserveScroll: true });
     }, 1000);
   } catch (err) {
-    manualErrorMsg.value = err.response?.data?.message || 'فشل تحديث الموقع يدوياً.';
+    manualErrorMsg.value = err.response?.data?.message || 'Error updating location';
   } finally {
     isUpdatingManual.value = false;
   }
@@ -109,7 +109,7 @@ async function saveManualAttendance() {
           {{ t('navAttendance') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          خريطة التتبع الميداني الحي وإدارة إحداثيات ومواقع حضور الموظفين بالـ GPS
+          {{ t('attendanceMapTitle') }}
         </p>
       </div>
     </div>
@@ -119,27 +119,27 @@ async function saveManualAttendance() {
       <div class="flex items-center gap-2 mb-3 pb-2 border-b border-sky-100 dark:border-slate-700">
         <Edit3 class="w-4 h-4 text-sky-600 dark:text-sky-400" />
         <h2 class="text-xs font-bold text-slate-900 dark:text-white">
-          أداة تعديل موقع الموظف يدوياً عبر الخريطة (خاص بالإدارة):
+          {{ t('adminManualLocationTitle') }}
         </h2>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
         <!-- Target Employee -->
         <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">الموظف المراد تعديل موقعه</label>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('targetEmployee') }}</label>
           <select
             v-model="manualForm.user_id"
             class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-medium"
           >
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-              {{ emp.name }} ({{ emp.department?.name || 'بدون قسم' }})
+              {{ emp.name }} ({{ emp.department?.name || t('department') }})
             </option>
           </select>
         </div>
 
         <!-- Latitude -->
         <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">خط العرض (Latitude)</label>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('latitude') }}</label>
           <input
             v-model.number="manualForm.latitude"
             type="number"
@@ -150,7 +150,7 @@ async function saveManualAttendance() {
 
         <!-- Longitude -->
         <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">خط الطول (Longitude)</label>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('longitude') }}</label>
           <input
             v-model.number="manualForm.longitude"
             type="number"
@@ -168,7 +168,7 @@ async function saveManualAttendance() {
             class="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-md shadow-sky-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <MapPin class="w-4 h-4" />
-            <span>{{ isUpdatingManual ? 'جاري الحفظ...' : 'تثبيت الموقع الميداني' }}</span>
+            <span>{{ isUpdatingManual ? t('savingManualLocation') : t('pinLocationBtn') }}</span>
           </button>
         </div>
       </div>
@@ -189,13 +189,13 @@ async function saveManualAttendance() {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <!-- Department Filter -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 mb-1">القسم</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
           <select
             v-model="filterForm.department_id"
             @change="applyFilters"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
           >
-            <option value="">{{ t('all') }} (كافة الأقسام)</option>
+            <option value="">{{ t('allDepartments') }}</option>
             <option v-for="dept in departments" :key="dept.id" :value="dept.id">
               {{ dept.name }}
             </option>
@@ -204,13 +204,13 @@ async function saveManualAttendance() {
 
         <!-- Employee Filter -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 mb-1">الموظف</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('tableEmployee') }}</label>
           <select
             v-model="filterForm.user_id"
             @change="applyFilters"
             class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
           >
-            <option value="">{{ t('all') }} (كافة الموظفين)</option>
+            <option value="">{{ t('allEmployees') }}</option>
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">
               {{ emp.name }}
             </option>
@@ -219,12 +219,12 @@ async function saveManualAttendance() {
 
         <!-- Date -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 mb-1">التاريخ</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('tableLogDate') }}</label>
           <input
             v-model="filterForm.date"
             @change="applyFilters"
             type="date"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
           />
         </div>
       </div>
@@ -235,7 +235,7 @@ async function saveManualAttendance() {
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Navigation class="w-4 h-4 text-sky-600" />
-          <span>خريطة التوزيع الجغرافي للموظفين الميدانيين ({{ mapPoints.length }} تسجيل)</span>
+          <span>{{ t('navAttendance') }} ({{ mapPoints.length }})</span>
         </h2>
       </div>
 
@@ -250,20 +250,20 @@ async function saveManualAttendance() {
     <!-- Attendance Logs Table -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="text-xs font-bold text-slate-900 dark:text-white">سجل الحضور والإحداثيات</h3>
-        <span class="text-xs text-slate-400">إجمالي السجلات: {{ logs.total || logs.data.length }}</span>
+        <h3 class="text-xs font-bold text-slate-900 dark:text-white">{{ t('attendanceTableTitle') }}</h3>
+        <span class="text-xs text-slate-400 font-mono">{{ t('totalRecords') }} {{ logs.total || logs.data.length }}</span>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-start text-xs">
-          <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 font-bold">
+          <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
             <tr>
-              <th class="py-3 px-4 text-start">الموظف</th>
-              <th class="py-3 px-4 text-start">القسم</th>
-              <th class="py-3 px-4 text-start">إحداثيات الـ GPS</th>
-              <th class="py-3 px-4 text-start">وقت التسجيل</th>
-              <th class="py-3 px-4 text-start">التاريخ</th>
-              <th class="py-3 px-4 text-center">عرض بالخريطة</th>
+              <th class="py-3 px-4 text-start">{{ t('tableEmployee') }}</th>
+              <th class="py-3 px-4 text-start">{{ t('tableDepartment') }}</th>
+              <th class="py-3 px-4 text-start">{{ t('tableCoordinates') }}</th>
+              <th class="py-3 px-4 text-start">{{ t('tableLogTime') }}</th>
+              <th class="py-3 px-4 text-start">{{ t('tableLogDate') }}</th>
+              <th class="py-3 px-4 text-center">{{ t('tableMapAction') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -284,7 +284,7 @@ async function saveManualAttendance() {
               <td class="py-3 px-4 font-mono text-slate-600 dark:text-slate-400">
                 ⏰ {{ log.log_time }}
               </td>
-              <td class="py-3 px-4 text-slate-500">
+              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono">
                 {{ log.log_date }}
               </td>
               <td class="py-3 px-4 text-center">
@@ -301,7 +301,7 @@ async function saveManualAttendance() {
 
             <tr v-if="logs.data.length === 0">
               <td colspan="6" class="py-12 text-center text-slate-400">
-                لا توجد سجلات حضور مسجلة في هذا التاريخ.
+                {{ t('noLogsFound') }}
               </td>
             </tr>
           </tbody>
