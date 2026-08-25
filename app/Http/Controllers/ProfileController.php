@@ -34,6 +34,10 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        if ($user->role !== 'admin') {
+            return back()->with('error', 'غير مصرح لك بتعديل بيانات الحساب. تعديل البيانات يتم حصرياً من قبل إدارة النظام.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'job_title' => ['nullable', 'string', 'max:255'],
@@ -42,12 +46,16 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
-        return back()->with('success', 'تم حفظ وتحديث بيانات الملف الشخصي بنجاح.');
+        return back()->with('success', 'تم تحديث الملف الشخصي بنجاح.');
     }
 
     public function updatePassword(Request $request): RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->role !== 'admin') {
+            return back()->with('error', 'تغيير كلمة المرور يتم حصرياً من قبل إدارة النظام عبر لوحة المستخدمين.');
+        }
 
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
@@ -58,6 +66,6 @@ class ProfileController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        return back()->with('success', 'تم تغيير كلمة المرور بنجاح.');
+        return back()->with('success', 'تم تحديث كلمة المرور بنجاح.');
     }
 }

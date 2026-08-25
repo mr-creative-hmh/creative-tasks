@@ -26,7 +26,7 @@ class UserAndProfileTest extends TestCase
         $dept = Department::create(['name' => 'قسم الحاسوب']);
 
         $response = $this->actingAs($admin)->from('/users')->post('/users', [
-            'name' => 'د. حسام الكرخي',
+            'name' => 'د. حسام مهدي',
             'email' => 'hussam@almamonuc.edu.iq',
             'password' => 'secret123',
             'role' => 'head',
@@ -63,37 +63,72 @@ class UserAndProfileTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_user_can_update_profile_info(): void
+    public function test_admin_can_update_profile_info(): void
     {
-        $user = User::factory()->create(['name' => 'Old Name', 'email' => 'old@almamonuc.edu.iq']);
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Old Admin', 'email' => 'admin.old@almamonuc.edu.iq']);
 
-        $response = $this->actingAs($user)->from('/profile')->patch('/profile', [
-            'name' => 'New Name',
-            'email' => 'new@almamonuc.edu.iq',
+        $response = $this->actingAs($admin)->from('/profile')->patch('/profile', [
+            'name' => 'New Admin Name',
+            'email' => 'admin.new@almamonuc.edu.iq',
         ]);
 
         $response->assertRedirect('/profile');
         $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'name' => 'New Name',
-            'email' => 'new@almamonuc.edu.iq',
+            'id' => $admin->id,
+            'name' => 'New Admin Name',
+            'email' => 'admin.new@almamonuc.edu.iq',
         ]);
     }
 
-    public function test_user_can_change_password(): void
+    public function test_employee_cannot_update_profile_info(): void
     {
-        $user = User::factory()->create([
+        $employee = User::factory()->create(['role' => 'employee', 'name' => 'Original Employee', 'email' => 'emp@almamonuc.edu.iq']);
+
+        $response = $this->actingAs($employee)->from('/profile')->patch('/profile', [
+            'name' => 'Hacked Employee Name',
+            'email' => 'hacked@almamonuc.edu.iq',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $this->assertDatabaseHas('users', [
+            'id' => $employee->id,
+            'name' => 'Original Employee',
+            'email' => 'emp@almamonuc.edu.iq',
+        ]);
+    }
+
+    public function test_admin_can_change_own_password(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
             'password' => Hash::make('old-password'),
         ]);
 
-        $response = $this->actingAs($user)->from('/profile')->put('/profile/password', [
+        $response = $this->actingAs($admin)->from('/profile')->put('/profile/password', [
             'current_password' => 'old-password',
             'password' => 'new-secret-123',
             'password_confirmation' => 'new-secret-123',
         ]);
 
         $response->assertRedirect('/profile');
-        $this->assertTrue(Hash::check('new-secret-123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('new-secret-123', $admin->fresh()->password));
+    }
+
+    public function test_employee_cannot_change_password_directly(): void
+    {
+        $employee = User::factory()->create([
+            'role' => 'employee',
+            'password' => Hash::make('original-password'),
+        ]);
+
+        $response = $this->actingAs($employee)->from('/profile')->put('/profile/password', [
+            'current_password' => 'original-password',
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ]);
+
+        $response->assertRedirect('/profile');
+        $this->assertTrue(Hash::check('original-password', $employee->fresh()->password));
     }
 
     public function test_admin_can_reset_user_password(): void
