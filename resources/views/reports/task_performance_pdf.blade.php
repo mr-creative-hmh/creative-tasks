@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
@@ -352,7 +352,7 @@
     <table class="signature-table">
         <tr>
             <td style="width: 33%;" class="signature-box">
-                <div style="font-weight: bold; font-size: 10px; color: #334155;">رئيس القسم / عميد الكلية</div>
+                <div style="font-weight: bold; font-size: 10px; color: #334155;">رئيس القسم المسؤول</div>
                 <div style="font-size: 9px; color: #64748b;">(التوقيع والمصادقة)</div>
                 <div class="signature-line"></div>
             </td>
@@ -361,7 +361,7 @@
                 <div style="width: 70px; height: 70px; border: 1.5px dashed #94a3b8; border-radius: 50%; margin: 6px auto 0 auto; line-height: 70px; font-size: 8px; color: #cbd5e1;">ختم الاعتماد</div>
             </td>
             <td style="width: 33%;" class="signature-box">
-                <div style="font-weight: bold; font-size: 10px; color: #334155;">رئاسة جامعة المأمون</div>
+                <div style="font-weight: bold; font-size: 10px; color: #334155;">المدير العام</div>
                 <div style="font-size: 9px; color: #64748b;">شعبة المتابعة والجودة</div>
                 <div class="signature-line"></div>
             </td>

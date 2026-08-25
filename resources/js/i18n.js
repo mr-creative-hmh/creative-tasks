@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue';
+﻿import { reactive, computed } from 'vue';
 
 const savedLocale = typeof window !== 'undefined' ? localStorage.getItem('app_locale') || 'ar' : 'ar';
 
@@ -197,7 +197,7 @@ export const translations = {
     taskDesc: 'التوجيهات والتعليمات الإدارية',
     assignTo: 'الموظف / التدريسي المكلف',
     taskType: 'نوع المهمة',
-    assignedType: 'تكليف رسمي من العمادة/القسم',
+    assignedType: 'تكليف رسمي من الإدارة/القسم',
     selfType: 'عمل مسجل ذاتياً',
     taskDate: 'تاريخ المهمة',
     assignedBy: 'جهة التكليف',
@@ -237,7 +237,7 @@ export const translations = {
     // Department Management
     addDepartment: 'إضافة كلية / قسم جديد',
     deptName: 'اسم الكلية / القسم',
-    deptManager: 'العميد / رئيس القسم المسؤول',
+    deptManager: 'رئيس القسم المسؤول',
     selectManager: 'اختر رئيس القسم (اختياري)',
     workStartTime: 'بداية الدوام الرسمي',
     workEndTime: 'نهاية الدوام الرسمي',
@@ -245,15 +245,15 @@ export const translations = {
     
     // Login & Demo
     demoAccountsTitle: 'حسابات تجريبية للاختبار السريع (Demo Accounts):',
-    demoPresidency: 'رئاسة الجامعة',
+    demoPresidency: 'المدير العام',
     demoHead: 'رئيس قسم IT',
     demoStaff: 'مهندس شبكات',
     footerCopyright: "جامعة المأمون • Al-Ma'moon University • بغداد، العراق",
 
     // Roles
-    adminRole: 'رئاسة الجامعة (Super Admin)',
-    headRole: 'رئيس قسم / عميد كلية (Head)',
-    employeeRole: 'كادر إداري / ميداني (Staff)',
+    adminRole: 'المدير العام (Admin)',
+    headRole: 'رئيس قسم (Department Head)',
+    employeeRole: 'موظف (Employee)',
   },
   en: {
     // App Brand & General
@@ -443,7 +443,7 @@ export const translations = {
     taskDesc: 'Administrative Directives / Notes',
     assignTo: 'Assigned Staff',
     taskType: 'Task Type',
-    assignedType: 'Assigned by Dean/Head',
+    assignedType: 'Assigned by Management/Head',
     selfType: 'Self-Reported',
     taskDate: 'Task Date',
     assignedBy: 'Assigned By',
@@ -483,7 +483,7 @@ export const translations = {
     // Department Management
     addDepartment: 'Add Faculty / Department',
     deptName: 'Faculty / Department Name',
-    deptManager: 'Dean / Head of Department',
+    deptManager: 'Head of Department',
     selectManager: 'Select Head (Optional)',
     workStartTime: 'Shift Start Time',
     workEndTime: 'Shift End Time',
@@ -491,15 +491,15 @@ export const translations = {
     
     // Login & Demo
     demoAccountsTitle: 'Demo Quick Login Accounts:',
-    demoPresidency: 'University Presidency (Admin)',
+    demoPresidency: 'General Manager (Admin)',
     demoHead: 'IT Dept Head',
     demoStaff: 'Network Engineer',
     footerCopyright: "Al-Ma'moon University • Baghdad, Iraq",
 
     // Roles
-    adminRole: 'University Presidency (Super Admin)',
-    headRole: 'Faculty Dean / Dept Head',
-    employeeRole: 'Staff / Faculty Member',
+    adminRole: 'General Manager (Admin)',
+    headRole: 'Department Head',
+    employeeRole: 'Employee',
   }
 };
 

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Create Super Admin (University Presidency / General Management)
         $superAdmin = User::create([
-            'name' => 'رئاسة جامعة المأمون',
+            'name' => 'المدير العام',
             'job_title' => 'رئيس الجامعة / المدير العام',
             'email' => 'admin@almamonuc.edu.iq',
             'password' => Hash::make('password'),

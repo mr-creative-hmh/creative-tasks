@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
@@ -401,7 +401,7 @@
         <!-- 6. OFFICIAL SIGNATURES & STAMPS -->
         <div class="sig-grid">
             <div class="sig-box">
-                <div style="font-weight: 800; font-size: 12px; color: #334155;">رئيس القسم / عميد الكلية</div>
+                <div style="font-weight: 800; font-size: 12px; color: #334155;">رئيس القسم المسؤول</div>
                 <div style="font-size: 10px; color: #64748b;">(التوقيع والمصادقة)</div>
                 <div class="sig-line"></div>
             </div>
@@ -410,7 +410,7 @@
                 <div style="width: 75px; height: 75px; border: 1.5px dashed #94a3b8; border-radius: 50%; margin: 8px auto 0 auto; line-height: 75px; font-size: 9px; color: #cbd5e1;">ختم الاعتماد</div>
             </div>
             <div class="sig-box">
-                <div style="font-weight: 800; font-size: 12px; color: #334155;">رئاسة جامعة المأمون</div>
+                <div style="font-weight: 800; font-size: 12px; color: #334155;">المدير العام</div>
                 <div style="font-size: 10px; color: #64748b;">شعبة المتابعة والجودة</div>
                 <div class="sig-line"></div>
             </div>
