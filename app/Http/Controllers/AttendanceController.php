@@ -92,18 +92,22 @@ class AttendanceController extends Controller
             'accuracy' => ['nullable', 'numeric'],
         ]);
 
-        $log = AttendanceLog::create([
-            'user_id' => $user->id,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
-            'log_date' => Carbon::today()->toDateString(),
-            'log_time' => Carbon::now()->toTimeString(),
-            'notes' => 'نظام الحضور الميداني الذاتي عبر المتصفح (GPS)',
-        ]);
+        $log = AttendanceLog::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'log_date' => Carbon::today()->toDateString(),
+            ],
+            [
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'log_time' => Carbon::now()->toTimeString(),
+                'notes' => 'تتبع حضور ميداني ذكي (GPS Live Auto-Sync)',
+            ]
+        );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تسجيل وتأكيد الحضور الميداني بنجاح',
+            'message' => 'تم توثيق الحضور وتحديث الموقع الميداني بنجاح',
             'log' => $log,
         ]);
     }
@@ -112,7 +116,7 @@ class AttendanceController extends Controller
     {
         $admin = $request->user();
         if (!in_array($admin->role, ['admin', 'head'])) {
-            return response()->json(['message' => 'غير مصرح.'], 403);
+            return response()->json(['message' => 'غير مصرح لك بهذا الإجراء.'], 403);
         }
 
         $validated = $request->validate([
@@ -124,7 +128,7 @@ class AttendanceController extends Controller
 
         $targetUser = User::findOrFail($validated['user_id']);
         if ($admin->role === 'head' && $targetUser->department_id !== $admin->department_id) {
-            return response()->json(['message' => 'غير مصرح بتعديل موظف خارج قسمك.'], 403);
+            return response()->json(['message' => 'غير مصرح لك بتعديل موظفي الأقسام الأخرى.'], 403);
         }
 
         $log = AttendanceLog::updateOrCreate(
@@ -136,13 +140,13 @@ class AttendanceController extends Controller
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
                 'log_time' => Carbon::now()->toTimeString(),
-                'notes' => $validated['notes'] ?? 'تحديث يدوي معتمد من قبل إدارة القسم/الجامعة عبر الخريطة',
+                'notes' => 'تثبيت يدوي من قبل الإدارة / رئيس القسم',
             ]
         );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تحديث موقع الموظف على الخريطة بنجاح',
+            'message' => 'تم تثبيت الموقع الجغرافي للموظف بنجاح',
             'log' => $log,
         ]);
     }

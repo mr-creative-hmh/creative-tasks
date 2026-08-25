@@ -1,10 +1,12 @@
-﻿<script setup>
-import { ref, computed } from 'vue';
+<script setup>
+import { ref, computed, onMounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import LanguageToggle from '@/Components/LanguageToggle.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import AccentPicker from '@/Components/AccentPicker.vue';
+import GpsLiveIndicator from '@/Components/GpsLiveIndicator.vue';
+import { initGlobalGpsTracker } from '@/Services/gpsTracker';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -35,79 +37,14 @@ const todayAttendance = computed(() => page.props.todayAttendance);
 const navItems = computed(() => {
   const role = authUser.value?.role || 'employee';
 
-  const items = [
-    {
-      name: t('navDashboard'),
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      roles: ['admin', 'head'],
-      active: page.url === '/dashboard' || page.url === '/'
-    },
-    {
-      name: t('navTasks'),
-      href: '/tasks',
-      icon: CheckSquare,
-      roles: ['admin', 'head'],
-      active: page.url.startsWith('/tasks')
-    },
-    {
-      name: t('navAttendance'),
-      href: '/attendance',
-      icon: MapPin,
-      roles: ['admin', 'head'],
-      active: page.url.startsWith('/attendance')
-    },
-    {
-      name: t('navDepartments'),
-      href: '/departments',
-      icon: Building2,
-      roles: ['admin'],
-      active: page.url.startsWith('/departments')
-    },
-    {
-      name: t('navUsers'),
-      href: '/users',
-      icon: Users,
-      roles: ['admin'],
-      active: page.url.startsWith('/users')
-    },
-    {
-      name: t('navReports'),
-      href: '/reports',
-      icon: FileBarChart,
-      roles: ['admin', 'head'],
-      active: page.url.startsWith('/reports')
-    },
-    {
-      name: t('navEmployeePortal'),
-      href: '/employee/tasks',
-      icon: Smartphone,
-      roles: ['admin', 'head', 'employee'],
-      active: page.url.startsWith('/employee')
-    },
-    {
-      name: t('navProfile'),
-      href: '/profile',
-      icon: User,
-      roles: ['admin', 'head', 'employee'],
-      active: page.url.startsWith('/profile')
-    }
-  ];
-
-  return items.filter(item => item.roles.includes(role));
-});
-
-// Primary Bottom Navigation Items for Mobile Screen (< md)
-const mobileBottomNavItems = computed(() => {
-  const role = authUser.value?.role || 'employee';
-
+  // For Employee
   if (role === 'employee') {
     return [
       {
         name: t('navEmployeePortal'),
         href: '/employee/tasks',
-        icon: GraduationCap,
-        active: page.url.startsWith('/employee')
+        icon: CheckSquare,
+        active: page.url.startsWith('/employee/tasks')
       },
       {
         name: t('navProfile'),
@@ -152,12 +89,91 @@ const mobileBottomNavItems = computed(() => {
     }
   ];
 
+  // Admin exclusive navigation
+  if (role === 'admin') {
+    items.splice(3, 0,
+      {
+        name: t('navDepartments'),
+        href: '/departments',
+        icon: Building2,
+        active: page.url.startsWith('/departments')
+      },
+      {
+        name: t('navUsers'),
+        href: '/users',
+        icon: Users,
+        active: page.url.startsWith('/users')
+      }
+    );
+  }
+
   return items;
+});
+
+// Native Mobile Bottom Nav Items (Max 4 items for clear mobile tap zones)
+const mobileBottomNavItems = computed(() => {
+  const role = authUser.value?.role || 'employee';
+  if (role === 'employee') {
+    return [
+      {
+        name: t('navEmployeePortal'),
+        href: '/employee/tasks',
+        icon: CheckSquare,
+        active: page.url.startsWith('/employee/tasks')
+      },
+      {
+        name: t('navProfile'),
+        href: '/profile',
+        icon: User,
+        active: page.url.startsWith('/profile')
+      }
+    ];
+  }
+
+  return [
+    {
+      name: t('navDashboard'),
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      active: page.url === '/dashboard' || page.url === '/'
+    },
+    {
+      name: t('navTasks'),
+      href: '/tasks',
+      icon: CheckSquare,
+      active: page.url.startsWith('/tasks')
+    },
+    {
+      name: t('navAttendance'),
+      href: '/attendance',
+      icon: MapPin,
+      active: page.url.startsWith('/attendance')
+    },
+    {
+      name: t('navReports'),
+      href: '/reports',
+      icon: FileBarChart,
+      active: page.url.startsWith('/reports')
+    },
+    {
+      name: t('navProfile'),
+      href: '/profile',
+      icon: User,
+      active: page.url.startsWith('/profile')
+    }
+  ];
 });
 
 function logout() {
   router.post('/logout');
 }
+
+onMounted(() => {
+  // Start silent automatic background GPS tracking across all pages
+  if (authUser.value) {
+    initGlobalGpsTracker();
+  }
+});
 </script>
 
 <template>
@@ -168,56 +184,80 @@ function logout() {
     <!-- ========================================================= -->
     <aside class="hidden md:flex flex-col w-64 lg:w-72 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800 shrink-0 select-none transition-colors duration-200">
       <!-- Logo Header -->
-      <div class="h-16 flex items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800">
-        <Link href="/" class="flex items-center gap-2.5 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+      <div class="p-6 border-b border-slate-100 dark:border-slate-800">
+        <Link href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-sky-500/25 group-hover:scale-105 transition-transform duration-200">
             <GraduationCap class="w-6 h-6" />
           </div>
           <div>
-            <div class="font-black text-sm text-slate-900 dark:text-white leading-tight tracking-tight">{{ t('appName') }}</div>
-            <div class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold leading-tight">{{ t('appSubtitle') }}</div>
+            <h1 class="text-sm font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+              {{ t('appName') }}
+            </h1>
+            <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold mt-0.5">
+              {{ t('appSubtitle') }}
+            </p>
           </div>
         </Link>
       </div>
 
-      <!-- Navigation Links -->
-      <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-        <Link
-          v-for="item in navItems"
-          :key="item.name"
-          :href="item.href"
-          :class="[
-            item.active 
-              ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/20 shadow-xs' 
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium'
-          ]"
-          class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group"
-        >
-          <component :is="item.icon" class="w-4 h-4 text-sky-600 dark:text-sky-400 transition-transform group-hover:scale-110" />
-          <span>{{ item.name }}</span>
-        </Link>
-      </nav>
-
-      <!-- Shift Info Badge on Desktop -->
-      <div v-if="activeDepartment" class="mx-3 mb-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-[11px]">
-        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 font-semibold mb-1">
-          <Clock class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-          <span>{{ t('shiftHours') }}</span>
+      <!-- Department Shift & Attendance Badge (Live Status Pill) -->
+      <div v-if="activeDepartment" class="mx-4 mt-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs">
+        <div class="flex items-center justify-between gap-1 mb-1.5">
+          <span class="font-bold text-slate-700 dark:text-slate-200 truncate">{{ activeDepartment?.name }}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 font-mono font-semibold">
+            {{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }}
+          </span>
         </div>
-        <div class="font-mono text-slate-500 dark:text-slate-400 text-[10px]">
-          {{ activeDepartment.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment.work_end_time?.substring(0,5) || '15:30' }}
+
+        <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+          <div v-if="todayAttendance" class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            <span>{{ t('present') }} ({{ todayAttendance.log_time }})</span>
+          </div>
+          <div v-else class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold">
+            <AlertTriangle class="w-3.5 h-3.5 animate-pulse" />
+            <span>{{ t('gpsWaiting') }}</span>
+          </div>
+          
+          <span class="text-[10px] text-slate-400 font-mono">{{ t('today') }}</span>
         </div>
       </div>
 
-      <!-- User Profile & Footer Actions -->
-      <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
-        <!-- Profile Link Card -->
+      <!-- Navigation Links -->
+      <div class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <div class="px-3 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+          {{ t('navDashboard') }}
+        </div>
+
+        <Link
+          v-for="item in navItems"
+          :key="item.href"
+          :href="item.href"
+          :class="[
+            item.active
+              ? 'bg-accent text-white shadow-accent font-bold'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-semibold'
+          ]"
+          class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all duration-150 group"
+        >
+          <component
+            :is="item.icon"
+            :class="item.active ? 'text-white' : 'text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400'"
+            class="w-4 h-4 shrink-0 transition-colors"
+          />
+          <span class="truncate">{{ item.name }}</span>
+        </Link>
+      </div>
+
+      <!-- Sidebar Footer (Preferences, Profile Card & Logout) -->
+      <div class="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <!-- User Info Strip -->
         <Link
           href="/profile"
-          class="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 hover:border-sky-500/50 transition-all cursor-pointer group"
+          class="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 transition-colors group cursor-pointer"
         >
-          <div class="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition-transform">
-            {{ authUser?.name?.charAt(0) || 'U' }}
+          <div class="w-8 h-8 rounded-lg bg-accent text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+            {{ authUser?.name ? authUser.name.charAt(0) : 'U' }}
           </div>
           <div class="min-w-0 flex-1">
             <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{{ authUser?.name }}</div>
@@ -227,9 +267,9 @@ function logout() {
           </div>
         </Link>
 
-        <!-- Controls Toolbar (Theme & Language) -->
-        <div class="flex items-center justify-between gap-2 px-1">
-          <span class="text-[10px] font-semibold text-slate-400">{{ t('preferences') }}</span>
+        <!-- Controls Toolbar (GPS Indicator, Theme & Language) -->
+        <div class="flex items-center justify-between gap-1.5 px-1">
+          <GpsLiveIndicator />
           <div class="flex items-center gap-1.5">
             <AccentPicker placement="top" />
             <ThemeToggle />
@@ -269,6 +309,7 @@ function logout() {
 
         <!-- Right Controls & Hamburger Drawer Trigger -->
         <div class="flex items-center gap-1.5 shrink-0">
+          <GpsLiveIndicator />
           <AccentPicker />
           <ThemeToggle />
           <LanguageToggle />
@@ -308,60 +349,54 @@ function logout() {
       @click="isMobileMenuOpen = false"
     >
       <div
-        class="w-72 bg-white dark:bg-slate-900 h-full flex flex-col p-4 shadow-2xl border-e border-slate-200 dark:border-slate-800 animate-slide-in"
+        class="w-72 bg-white dark:bg-slate-900 h-full p-4 flex flex-col justify-between shadow-2xl transition-transform duration-300 animate-slide-in"
         @click.stop
       >
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold">
-              <GraduationCap class="w-5 h-5" />
+        <div class="space-y-4">
+          <!-- Drawer Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-accent text-white flex items-center justify-center font-bold text-xs">
+                {{ authUser?.name ? authUser.name.charAt(0) : 'U' }}
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ authUser?.name }}</div>
+                <div class="text-[10px] text-slate-400 truncate">{{ authUser?.email }}</div>
+              </div>
             </div>
-            <span class="font-bold text-xs">{{ t('appName') }}</span>
+            <button @click="isMobileMenuOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+              <X class="w-4 h-4" />
+            </button>
           </div>
-          <button @click="isMobileMenuOpen = false" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
-            <X class="w-4 h-4" />
-          </button>
+
+          <!-- Drawer Navigation Links -->
+          <nav class="space-y-1">
+            <Link
+              v-for="mItem in navItems"
+              :key="mItem.href"
+              :href="mItem.href"
+              @click="isMobileMenuOpen = false"
+              :class="[
+                mItem.active
+                  ? 'bg-accent text-white shadow-accent font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold'
+              ]"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-colors"
+            >
+              <component :is="mItem.icon" class="w-4 h-4 shrink-0" />
+              <span>{{ mItem.name }}</span>
+            </Link>
+          </nav>
         </div>
 
-        <nav class="flex-1 space-y-1.5 overflow-y-auto">
-          <Link
-            v-for="item in navItems"
-            :key="item.name"
-            :href="item.href"
-            @click="isMobileMenuOpen = false"
-            :class="[
-              item.active 
-                ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/20' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-            ]"
-            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs"
-          >
-            <component :is="item.icon" class="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <span>{{ item.name }}</span>
-          </Link>
-        </nav>
-
-        <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-          <Link
-            href="/profile"
-            @click="isMobileMenuOpen = false"
-            class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60"
-          >
-            <div class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 flex items-center justify-center font-bold text-xs">
-              {{ authUser?.name?.charAt(0) || 'U' }}
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-xs font-bold truncate">{{ authUser?.name }}</div>
-              <div class="text-[10px] text-slate-400 truncate">{{ authUser?.job_title || authUser?.department?.name }}</div>
-            </div>
-          </Link>
-
+        <!-- Drawer Footer -->
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <button
             @click="logout"
             type="button"
-            class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/40 dark:border-rose-900/40"
+            class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40"
           >
-            <LogOut class="w-3.5 h-3.5" />
+            <LogOut class="w-4 h-4" />
             <span>{{ t('logout') }}</span>
           </button>
         </div>
@@ -418,10 +453,8 @@ function logout() {
         :class="bItem.active ? 'text-sky-600 dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400'"
         class="flex flex-col items-center gap-0.5 text-[10px] transition-colors"
       >
-        <div :class="bItem.active ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400' : 'text-slate-500'" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all">
-          <component :is="bItem.icon" class="w-4 h-4" />
-        </div>
-        <span class="truncate max-w-[70px]">{{ bItem.name }}</span>
+        <component :is="bItem.icon" class="w-5 h-5" />
+        <span>{{ bItem.name }}</span>
       </Link>
     </nav>
 
