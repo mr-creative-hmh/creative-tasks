@@ -25,7 +25,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Layers,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-vue-next';
 
 const isMobileMenuOpen = ref(false);
@@ -267,9 +268,9 @@ onMounted(() => {
           </div>
         </Link>
 
-        <!-- Controls Toolbar (GPS Indicator, Theme & Language) -->
+        <!-- Controls Toolbar (GPS Indicator, Theme & Language) with placement="top" -->
         <div class="flex items-center justify-between gap-1.5 px-1">
-          <GpsLiveIndicator />
+          <GpsLiveIndicator placement="top" />
           <div class="flex items-center gap-1.5">
             <AccentPicker placement="top" />
             <ThemeToggle />
@@ -295,7 +296,7 @@ onMounted(() => {
     <header class="md:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 transition-colors duration-200">
       <div class="flex items-center justify-between gap-2">
         <!-- University Logo & Brand -->
-        <Link href="/" class="flex items-center gap-2.5 min-w-0">
+        <Link href="/" class="flex items-center gap-2 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20 shrink-0">
             <GraduationCap class="w-5 h-5" />
           </div>
@@ -307,10 +308,10 @@ onMounted(() => {
           </div>
         </Link>
 
-        <!-- Right Controls & Hamburger Drawer Trigger -->
+        <!-- Right Controls (Easy to Reach) & Hamburger Drawer Trigger -->
         <div class="flex items-center gap-1.5 shrink-0">
-          <GpsLiveIndicator />
-          <AccentPicker />
+          <GpsLiveIndicator placement="bottom" />
+          <AccentPicker placement="bottom" />
           <ThemeToggle />
           <LanguageToggle />
           <button
@@ -404,43 +405,88 @@ onMounted(() => {
     </div>
 
     <!-- ========================================================= -->
-    <!-- 3. MAIN CONTENT AREA (Responsive Container)               -->
+    <!-- 3. MAIN CONTENT CONTAINER WITH DESKTOP TOP HEADER BAR      -->
     <!-- ========================================================= -->
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto w-full">
-      <!-- Flash Alert Feedback Messages -->
-      <div v-if="page.props.flash?.success" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>{{ page.props.flash.success }}</span>
-      </div>
-
-      <div v-if="page.props.flash?.error" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
-        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-        <span>{{ page.props.flash.error }}</span>
-      </div>
-
-      <slot />
-
-      <!-- Universal Designer / Creator Credit Footer -->
-      <footer class="mt-12 pt-6 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-2 w-full px-2">
-          <div class="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-            <GraduationCap class="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <span>{{ t('appName') }}</span>
-            <span class="text-slate-300 dark:text-slate-700">•</span>
-            <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ t('systemSignature') }}</span>
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      
+      <!-- Top Desktop Header Bar (Always in reach on Desktop/Laptop) -->
+      <header class="hidden md:flex items-center justify-between px-6 lg:px-8 py-3.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-20 transition-colors">
+        <!-- Left Breadcrumb / Department Badge -->
+        <div class="flex items-center gap-3">
+          <div v-if="activeDepartment" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold border border-slate-200/60 dark:border-slate-700/60">
+            <Building2 class="w-3.5 h-3.5 text-accent" />
+            <span class="text-slate-800 dark:text-slate-200">{{ activeDepartment.name }}</span>
+            <span class="text-[10px] text-slate-400 font-mono ms-1">
+              ({{ activeDepartment?.work_start_time?.substring(0,5) || '08:00' }} - {{ activeDepartment?.work_end_time?.substring(0,5) || '15:30' }})
+            </span>
           </div>
 
-          <div class="text-[11px] flex items-center gap-1.5 font-medium">
-            <span class="text-sky-600 dark:text-sky-400 font-bold">{{ t('creatorCredit') }}</span>
-            <span class="text-slate-300 dark:text-slate-700">•</span>
-            <span class="font-mono text-slate-400 dark:text-slate-500">{{ t('allRightsReserved', { year: new Date().getFullYear() }) }}</span>
+          <div v-if="todayAttendance" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" />
+            <span>{{ t('present') }}: <strong class="font-mono">{{ todayAttendance.log_time }}</strong></span>
           </div>
         </div>
-      </footer>
 
-      <!-- Bottom Spacer for Mobile so content is never blocked by Bottom Bar -->
-      <div class="h-24 md:hidden w-full shrink-0" aria-hidden="true"></div>
-    </main>
+        <!-- Right Quick Action Toolbar (GPS, Accent, Theme, Lang, User) -->
+        <div class="flex items-center gap-2">
+          <GpsLiveIndicator placement="bottom" />
+          <AccentPicker placement="bottom" />
+          <ThemeToggle />
+          <LanguageToggle />
+
+          <!-- Mini Profile Chip -->
+          <Link
+            href="/profile"
+            class="ms-2 flex items-center gap-2 p-1 pe-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+          >
+            <div class="w-7 h-7 rounded-lg bg-accent text-white font-black text-xs flex items-center justify-center shadow-xs">
+              {{ authUser?.name ? authUser.name.charAt(0) : 'U' }}
+            </div>
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[120px] truncate">
+              {{ authUser?.name }}
+            </span>
+          </Link>
+        </div>
+      </header>
+
+      <!-- Main Page Content -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full">
+        <!-- Flash Alert Feedback Messages -->
+        <div v-if="page.props.flash?.success" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>{{ page.props.flash.success }}</span>
+        </div>
+
+        <div v-if="page.props.flash?.error" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <span>{{ page.props.flash.error }}</span>
+        </div>
+
+        <slot />
+
+        <!-- Universal Designer / Creator Credit Footer -->
+        <footer class="mt-12 pt-6 pb-4 border-t border-slate-200/80 dark:border-slate-800/80 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-2 w-full px-2">
+            <div class="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
+              <GraduationCap class="w-4 h-4 text-sky-600 dark:text-sky-400" />
+              <span>{{ t('appName') }}</span>
+              <span class="text-slate-300 dark:text-slate-700">•</span>
+              <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">{{ t('systemSignature') }}</span>
+            </div>
+
+            <div class="text-[11px] flex items-center gap-1.5 font-medium">
+              <span class="text-sky-600 dark:text-sky-400 font-bold">{{ t('creatorCredit') }}</span>
+              <span class="text-slate-300 dark:text-slate-700">•</span>
+              <span class="font-mono text-slate-400 dark:text-slate-500">{{ t('allRightsReserved', { year: new Date().getFullYear() }) }}</span>
+            </div>
+          </div>
+        </footer>
+
+        <!-- Bottom Spacer for Mobile so content is never blocked by Bottom Bar -->
+        <div class="h-24 md:hidden w-full shrink-0" aria-hidden="true"></div>
+      </main>
+
+    </div>
 
     <!-- ========================================================= -->
     <!-- 4. NATIVE MOBILE APP BOTTOM NAVIGATION BAR (< md screens)  -->
