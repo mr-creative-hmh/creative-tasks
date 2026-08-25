@@ -74,13 +74,16 @@ function logout() {
       </div>
     </header>
 
-    <!-- Scrollable Content Area -->
-    <main class="flex-1 p-3 sm:p-4 pb-24 overflow-y-auto w-full">
+    <!-- Scrollable Content Area with Safe Bottom Spacing -->
+    <main class="flex-1 p-3 sm:p-4 overflow-y-auto w-full">
       <slot />
+      
+      <!-- Dedicated Bottom Spacer so fixed nav bar never covers any cards -->
+      <div class="h-28 w-full shrink-0" aria-hidden="true"></div>
     </main>
 
-    <!-- Bottom Navigation Bar for PWA -->
-    <nav class="fixed bottom-0 inset-x-0 max-w-lg md:max-w-xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-around z-30 transition-colors duration-200">
+    <!-- Bottom Navigation Bar for PWA with Shadow and Safe Area -->
+    <nav class="fixed bottom-0 inset-x-0 max-w-lg md:max-w-xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/90 dark:border-slate-800 px-4 pt-2 pb-3 flex items-center justify-around z-30 transition-colors duration-200 shadow-lg shadow-black/15">
       <Link
         href="/employee/tasks"
         :class="page.url.startsWith('/employee') ? 'text-sky-600 dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400'"
