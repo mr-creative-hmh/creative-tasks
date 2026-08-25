@@ -53,13 +53,13 @@ const taskForm = useForm({
   user_id: '',
   title: '',
   description: '',
-  progress: 0,
+  completion_rate: 0,
   status: 'pending',
   task_date: new Date().toISOString().split('T')[0],
 });
 
-// Watch progress change inside edit modal to auto-update status field
-watch(() => taskForm.progress, (newVal) => {
+// Watch completion_rate change inside edit modal to auto-update status field
+watch(() => taskForm.completion_rate, (newVal) => {
   if (newVal === 100) {
     taskForm.status = 'completed';
   } else if (newVal > 0) {
@@ -70,14 +70,20 @@ watch(() => taskForm.progress, (newVal) => {
 });
 
 function applyFilters() {
-  router.get('/tasks', filterForm.value, { preserveState: true, replace: true });
+  const cleanParams = {};
+  for (const [k, v] of Object.entries(filterForm.value)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      cleanParams[k] = v;
+    }
+  }
+  router.get('/tasks', cleanParams, { preserveState: true, replace: true });
 }
 
 function openCreateModal() {
   editingTask.value = null;
   taskForm.reset();
   taskForm.user_id = props.employees[0]?.id || '';
-  taskForm.progress = 0;
+  taskForm.completion_rate = 0;
   taskForm.status = 'pending';
   taskForm.task_date = filterForm.value.date || new Date().toISOString().split('T')[0];
   isModalOpen.value = true;
@@ -91,15 +97,24 @@ function openEditModal(task) {
   taskForm.user_id = task.user_id;
   taskForm.title = task.title;
   taskForm.description = task.description || '';
-  taskForm.progress = Number(task.progress) || 0;
+  taskForm.completion_rate = Number(task.progress) || 0;
   taskForm.status = task.status || (task.progress === 100 ? 'completed' : (task.progress > 0 ? 'in_progress' : 'pending'));
   taskForm.task_date = rawDate;
   isModalOpen.value = true;
 }
 
 function submitTask() {
+  const submitData = {
+    user_id: taskForm.user_id,
+    title: taskForm.title,
+    description: taskForm.description,
+    progress: taskForm.completion_rate,
+    status: taskForm.status,
+    task_date: taskForm.task_date,
+  };
+
   if (editingTask.value) {
-    taskForm.put(`/tasks/${editingTask.value.id}`, {
+    taskForm.transform(() => submitData).put(`/tasks/${editingTask.value.id}`, {
       preserveScroll: true,
       onSuccess: () => {
         isModalOpen.value = false;
@@ -107,7 +122,7 @@ function submitTask() {
       }
     });
   } else {
-    taskForm.post('/tasks', {
+    taskForm.transform(() => submitData).post('/tasks', {
       preserveScroll: true,
       onSuccess: () => {
         isModalOpen.value = false;
@@ -132,17 +147,17 @@ function deleteTask(task) {
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          {{ t('navTasks') }}
+          {{ t('tasksTitle') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          متابعة وتكليف المهام اليومية لكوادر الأقسام والكليات
+          {{ t('tasksDesc') }}
         </p>
       </div>
 
       <button
         @click="openCreateModal"
         type="button"
-        class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 active:scale-95 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 transition-all cursor-pointer"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
       >
         <Plus class="w-4 h-4" />
         <span>{{ t('assignNewTask') }}</span>
@@ -152,7 +167,18 @@ function deleteTask(task) {
     <!-- Filters Bar -->
     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs mb-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <!-- Department Filter -->
+        <!-- Date -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('taskDate') }}</label>
+          <input
+            v-model="filterForm.date"
+            @change="applyFilters"
+            type="date"
+            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
+          />
+        </div>
+
+        <!-- Department -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
           <select
@@ -167,9 +193,9 @@ function deleteTask(task) {
           </select>
         </div>
 
-        <!-- Employee Filter -->
+        <!-- Employee -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('assignTo') }}</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('tableEmployee') }}</label>
           <select
             v-model="filterForm.user_id"
             @change="applyFilters"
@@ -182,7 +208,7 @@ function deleteTask(task) {
           </select>
         </div>
 
-        <!-- Status Filter -->
+        <!-- Status -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('status') }}</label>
           <select
@@ -197,7 +223,7 @@ function deleteTask(task) {
           </select>
         </div>
 
-        <!-- Type Filter -->
+        <!-- Task Type -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('taskType') }}</label>
           <select
@@ -210,29 +236,18 @@ function deleteTask(task) {
             <option value="self_reported">{{ t('typeSelf') }}</option>
           </select>
         </div>
-
-        <!-- Date Filter -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('taskDate') }}</label>
-          <input
-            v-model="filterForm.date"
-            @change="applyFilters"
-            type="date"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 font-mono"
-          />
-        </div>
       </div>
     </div>
 
-    <!-- Tasks Table -->
+    <!-- Tasks List Table -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-start text-xs">
           <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
             <tr>
               <th class="py-3.5 px-4 text-start">{{ t('taskTitle') }}</th>
-              <th class="py-3.5 px-4 text-start">{{ t('assignTo') }}</th>
-              <th class="py-3.5 px-4 text-start">{{ t('department') }}</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableEmployee') }}</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableDepartment') }}</th>
               <th class="py-3.5 px-4 text-center">{{ t('taskType') }}</th>
               <th class="py-3.5 px-4 text-center">{{ t('progress') }}</th>
               <th class="py-3.5 px-4 text-center">{{ t('status') }}</th>
@@ -244,40 +259,36 @@ function deleteTask(task) {
             <tr 
               v-for="task in tasks.data" 
               :key="task.id"
-              class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+              class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
             >
               <td class="py-3.5 px-4">
-                <div class="font-bold text-slate-900 dark:text-white leading-snug">{{ task.title }}</div>
-                <div v-if="task.description" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">{{ task.description }}</div>
+                <div class="font-bold text-slate-900 dark:text-white">{{ task.title }}</div>
+                <div v-if="task.description" class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                  {{ task.description }}
+                </div>
               </td>
-              <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                {{ task.user?.name }}
+
+              <td class="py-3.5 px-4">
+                <span class="font-semibold text-slate-800 dark:text-slate-200">{{ task.user?.name }}</span>
               </td>
+
               <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
                 {{ task.department?.name }}
               </td>
+
               <td class="py-3.5 px-4 text-center">
                 <span 
-                  v-if="task.task_type === 'assigned'" 
-                  class="inline-flex items-center justify-center whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50"
+                  :class="task.task_type === 'assigned' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'"
+                  class="inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0"
                 >
-                  {{ t('typeAssigned') }}
-                </span>
-                <span 
-                  v-else 
-                  class="inline-flex items-center justify-center whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50"
-                >
-                  {{ t('typeSelf') }}
+                  {{ task.task_type === 'assigned' ? t('typeAssigned') : t('typeSelf') }}
                 </span>
               </td>
+
               <td class="py-3.5 px-4 text-center">
                 <div class="inline-flex items-center gap-2">
-                  <div class="w-14 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                    <div 
-                      :class="task.progress === 100 ? 'bg-emerald-500' : 'bg-sky-600'" 
-                      class="h-full rounded-full transition-all" 
-                      :style="{ width: `${task.progress}%` }"
-                    ></div>
+                  <div class="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-sky-600 h-full rounded-full" :style="{ width: `${task.progress}%` }"></div>
                   </div>
                   <span class="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px]">{{ task.progress }}%</span>
                 </div>
@@ -400,10 +411,10 @@ function deleteTask(task) {
             <div v-if="editingTask">
               <div class="flex items-center justify-between mb-1">
                 <label class="font-semibold text-slate-700 dark:text-slate-300">{{ t('progress') }}:</label>
-                <span class="font-bold text-sky-600 dark:text-sky-400 font-mono">{{ taskForm.progress }}%</span>
+                <span class="font-bold text-sky-600 dark:text-sky-400 font-mono">{{ taskForm.completion_rate }}%</span>
               </div>
               <input
-                v-model.number="taskForm.progress"
+                v-model.number="taskForm.completion_rate"
                 type="range"
                 min="0"
                 max="100"
@@ -413,7 +424,7 @@ function deleteTask(task) {
               <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
                 <span>{{ t('status') }}:</span>
                 <span class="font-bold text-slate-600 dark:text-slate-300">
-                  {{ taskForm.progress === 100 ? t('statusCompleted') : (taskForm.progress > 0 ? t('statusInProgress') : t('statusPending')) }}
+                  {{ taskForm.completion_rate === 100 ? t('statusCompleted') : (taskForm.completion_rate > 0 ? t('statusInProgress') : t('statusPending')) }}
                 </span>
               </div>
             </div>

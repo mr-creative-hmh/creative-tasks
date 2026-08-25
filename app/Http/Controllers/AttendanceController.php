@@ -37,8 +37,17 @@ class AttendanceController extends Controller
         }
 
         $logs = $query->latest('id')->paginate(20)->withQueryString();
-        $departments = Department::all();
-        $employees = User::where('role', 'employee')->get();
+        
+        $departmentsQuery = Department::query();
+        $employeesQuery = User::where('role', 'employee');
+        
+        if ($user->role === 'head') {
+            $departmentsQuery->where('id', $user->department_id);
+            $employeesQuery->where('department_id', $user->department_id);
+        }
+
+        $departments = $departmentsQuery->get();
+        $employees = $employeesQuery->get();
 
         // Coordinates for map pin plotting
         $mapPoints = (clone $query)->get()->map(function ($log) {
@@ -64,6 +73,10 @@ class AttendanceController extends Controller
                 'user_id' => $userId,
                 'date' => $date,
             ],
+            'stats' => [
+                'total_present_today' => AttendanceLog::whereDate('log_date', Carbon::today())->distinct('user_id')->count('user_id'),
+                'total_employees' => User::where('role', 'employee')->count(),
+            ]
         ]);
     }
 
@@ -74,64 +87,61 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'accuracy' => ['nullable', 'numeric'],
         ]);
 
-        $now = Carbon::now();
-        $today = $now->toDateString();
-
-        // Auto-update or create attendance record for today
-        $log = AttendanceLog::updateOrCreate(
-            [
-                'user_id' => $user->id,
-                'log_date' => $today,
-            ],
-            [
-                'latitude' => $validated['latitude'],
-                'longitude' => $validated['longitude'],
-                'log_time' => $now->toTimeString(),
-            ]
-        );
+        $log = AttendanceLog::create([
+            'user_id' => $user->id,
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'log_date' => Carbon::today()->toDateString(),
+            'log_time' => Carbon::now()->toTimeString(),
+            'notes' => 'نظام الحضور الميداني الذاتي عبر المتصفح (GPS)',
+        ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تسجيل وتحديث الحضور وإحداثيات الموقع تلقائياً بنجاح.',
+            'message' => 'تم تسجيل وتأكيد الحضور الميداني بنجاح',
             'log' => $log,
         ]);
     }
 
     public function manualUpdate(Request $request): JsonResponse
     {
-        $user = $request->user();
-        if (!in_array($user->role, ['admin', 'head'])) {
-            return response()->json(['message' => 'غير مصرح لك بتعديل الموقع يدوياً.'], 403);
+        $admin = $request->user();
+        if (!in_array($admin->role, ['admin', 'head'])) {
+            return response()->json(['message' => 'غير مصرح.'], 403);
         }
 
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $date = $validated['date'] ?? Carbon::today()->toDateString();
-        $now = Carbon::now();
+        $targetUser = User::findOrFail($validated['user_id']);
+        if ($admin->role === 'head' && $targetUser->department_id !== $admin->department_id) {
+            return response()->json(['message' => 'غير مصرح بتعديل موظف خارج قسمك.'], 403);
+        }
 
         $log = AttendanceLog::updateOrCreate(
             [
-                'user_id' => $validated['user_id'],
-                'log_date' => $date,
+                'user_id' => $targetUser->id,
+                'log_date' => Carbon::today()->toDateString(),
             ],
             [
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
-                'log_time' => $now->toTimeString(),
+                'log_time' => Carbon::now()->toTimeString(),
+                'notes' => $validated['notes'] ?? 'تحديث يدوي معتمد من قبل إدارة القسم/الجامعة عبر الخريطة',
             ]
         );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تحديث موقع وتواجد الموظف يدوياً بنجاح عبر الخريطة.',
-            'log' => $log->load('user.department'),
+            'message' => 'تم تحديث موقع الموظف على الخريطة بنجاح',
+            'log' => $log,
         ]);
     }
 }

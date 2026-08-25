@@ -19,7 +19,9 @@ import {
   Clock,
   AlertCircle,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  ListTodo,
+  Printer
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -70,8 +72,30 @@ const filterForm = ref({
   date_to: props.filters.date_to ? String(props.filters.date_to).split('T')[0] : '',
 });
 
+function getCleanFilterParams() {
+  const clean = {};
+  for (const [key, val] of Object.entries(filterForm.value)) {
+    if (val !== '' && val !== null && val !== undefined) {
+      clean[key] = val;
+    }
+  }
+  return clean;
+}
+
 function applyFilters() {
-  router.get('/reports', filterForm.value, { preserveState: true, replace: true });
+  router.get('/reports', getCleanFilterParams(), { preserveState: true, replace: true });
+}
+
+function resetFilters() {
+  filterForm.value = {
+    department_id: '',
+    user_id: '',
+    status: '',
+    task_type: '',
+    date_from: '',
+    date_to: '',
+  };
+  applyFilters();
 }
 
 function setDatePreset(type) {
@@ -90,32 +114,24 @@ function setDatePreset(type) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     filterForm.value.date_from = startOfMonth.toISOString().split('T')[0];
     filterForm.value.date_to = todayStr;
-  } else if (type === 'year') {
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    filterForm.value.date_from = startOfYear.toISOString().split('T')[0];
-    filterForm.value.date_to = todayStr;
+  } else if (type === 'all') {
+    filterForm.value.date_from = '';
+    filterForm.value.date_to = '';
   }
   applyFilters();
 }
 
 function exportPdf() {
-  const params = new URLSearchParams(filterForm.value).toString();
-  window.open(`/reports/pdf?${params}`, '_blank');
+  const clean = getCleanFilterParams();
+  const queryString = new URLSearchParams(clean).toString();
+  window.open(`/reports/pdf?${queryString}`, '_blank');
 }
 
 function exportExcel() {
-  const params = new URLSearchParams(filterForm.value).toString();
-  window.location.href = `/reports/excel?${params}`;
+  const clean = getCleanFilterParams();
+  const queryString = new URLSearchParams(clean).toString();
+  window.location.href = `/reports/excel?${queryString}`;
 }
-
-// Chart calculations for SVG Donut
-const statusPercentages = computed(() => {
-  const total = props.summary.total || 1;
-  const completedPct = Math.round((props.summary.completed / total) * 100);
-  const inProgressPct = Math.round((props.summary.in_progress / total) * 100);
-  const pendingPct = Math.round((props.summary.pending / total) * 100);
-  return { completedPct, inProgressPct, pendingPct };
-});
 </script>
 
 <template>
@@ -129,7 +145,7 @@ const statusPercentages = computed(() => {
           {{ t('navReports') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          تحليل مؤشرات الإنجاز الدورية، الرسوم البيانية، وتصدير التقارير الرسمية (PDF & Excel)
+          تحليل مؤشرات الإنجاز الدورية، الرسوم البيانية، وتصدير التقارير الرسمية المعتمدة (PDF & XLSX)
         </p>
       </div>
 
@@ -142,7 +158,7 @@ const statusPercentages = computed(() => {
           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
         >
           <FileSpreadsheet class="w-4 h-4" />
-          <span>تصدير إكسل (Excel)</span>
+          <span>تصدير إكسل (XLSX)</span>
         </button>
 
         <!-- PDF Export Button -->
@@ -151,8 +167,8 @@ const statusPercentages = computed(() => {
           type="button"
           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-95 text-white font-bold text-xs shadow-md shadow-rose-600/25 transition-all cursor-pointer"
         >
-          <Download class="w-4 h-4" />
-          <span>{{ t('exportPdf') }}</span>
+          <Printer class="w-4 h-4" />
+          <span>طباعة التقرير / PDF</span>
         </button>
       </div>
     </div>
@@ -186,11 +202,11 @@ const statusPercentages = computed(() => {
           {{ t('thisMonth') }}
         </button>
         <button
-          @click="setDatePreset('year')"
+          @click="setDatePreset('all')"
           type="button"
           class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 text-slate-700 dark:text-slate-300 font-bold transition-colors cursor-pointer"
         >
-          هذا العام
+          {{ t('all') }}
         </button>
       </div>
     </div>
@@ -394,7 +410,7 @@ const statusPercentages = computed(() => {
             <BarChart3 class="w-4 h-4 text-sky-600" />
             <h2 class="text-xs font-bold text-slate-900 dark:text-white">مقارنة أداء الكليات والأقسام (Department Performance)</h2>
           </div>
-          <span class="text-[11px] text-slate-400">{{ departmentPerformance.length }} قسم</span>
+          <span class="text-[11px] text-slate-400 font-mono">{{ departmentPerformance.length }} قسم</span>
         </div>
 
         <div class="space-y-4">
@@ -431,7 +447,104 @@ const statusPercentages = computed(() => {
       </div>
     </div>
 
-    <!-- Employee Performance Leaderboard Table -->
+    <!-- 3. Detailed Tasks Records Table (Showing exact viewed data) -->
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden mb-6">
+      <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          <ListTodo class="w-4 h-4 text-sky-600" />
+          <span>السجل التفصيلي للمهام المصفاة (Filtered Detailed Tasks)</span>
+        </h3>
+        <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">
+          {{ tasks.length }} مهمة ظاهرة
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-start text-xs">
+          <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
+            <tr>
+              <th class="py-3.5 px-4 text-start">#</th>
+              <th class="py-3.5 px-4 text-start">{{ t('taskTitle') }}</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableEmployee') }}</th>
+              <th class="py-3.5 px-4 text-start">{{ t('tableDepartment') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('taskType') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('progress') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('status') }}</th>
+              <th class="py-3.5 px-4 text-center">{{ t('taskDate') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr 
+              v-for="(task, index) in tasks" 
+              :key="task.id"
+              class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+            >
+              <td class="py-3 px-4 font-mono text-slate-400 text-center">
+                {{ index + 1 }}
+              </td>
+
+              <td class="py-3 px-4">
+                <div class="font-bold text-slate-900 dark:text-white">{{ task.title }}</div>
+                <div v-if="task.description" class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                  {{ task.description }}
+                </div>
+              </td>
+
+              <td class="py-3 px-4">
+                <span class="font-semibold text-slate-800 dark:text-slate-200">{{ task.user?.name || '-' }}</span>
+              </td>
+
+              <td class="py-3 px-4 text-slate-500 dark:text-slate-400">
+                {{ task.department?.name || '-' }}
+              </td>
+
+              <td class="py-3 px-4 text-center">
+                <span 
+                  :class="task.task_type === 'assigned' ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'"
+                  class="inline-flex items-center justify-center whitespace-nowrap px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0"
+                >
+                  {{ task.task_type === 'assigned' ? t('typeAssigned') : t('typeSelf') }}
+                </span>
+              </td>
+
+              <td class="py-3 px-4 text-center">
+                <div class="inline-flex items-center gap-2">
+                  <div class="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-sky-600 h-full rounded-full" :style="{ width: `${task.progress}%` }"></div>
+                  </div>
+                  <span class="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px]">{{ task.progress }}%</span>
+                </div>
+              </td>
+
+              <td class="py-3 px-4 text-center">
+                <span 
+                  :class="{
+                    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60': task.status === 'completed',
+                    'bg-teal-50 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300 border-teal-200 dark:border-teal-800/60': task.status === 'in_progress',
+                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700': task.status === 'pending',
+                  }"
+                  class="inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0"
+                >
+                  {{ task.status === 'completed' ? t('statusCompleted') : (task.status === 'in_progress' ? t('statusInProgress') : t('statusPending')) }}
+                </span>
+              </td>
+
+              <td class="py-3 px-4 text-center text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                {{ task.task_date }}
+              </td>
+            </tr>
+
+            <tr v-if="tasks.length === 0">
+              <td colspan="8" class="py-12 text-center text-slate-400">
+                {{ t('noTasksFound') }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. Employee Performance Leaderboard Table -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden mb-6">
       <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <h3 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">

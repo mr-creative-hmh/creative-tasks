@@ -20,18 +20,29 @@ class ReportController extends Controller
 {
     private function buildQuery(Request $request, $user)
     {
-        $departmentId = $request->input('department_id');
+        $query = Task::with(['user.department', 'assigner', 'department']);
+
+        // Strictly enforce Department for Head
         if ($user->role === 'head') {
-            $departmentId = $user->department_id;
+            $query->where('department_id', $user->department_id);
+        } elseif ($request->filled('department_id')) {
+            $query->where('department_id', $request->input('department_id'));
         }
 
-        $userId = $request->input('user_id');
-        $status = $request->input('status');
-        $taskType = $request->input('task_type');
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->input('task_type'));
+        }
+
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
-
-        $query = Task::with(['user.department', 'assigner', 'department']);
 
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereBetween('task_date', [$dateFrom, $dateTo]);
@@ -39,19 +50,6 @@ class ReportController extends Controller
             $query->where('task_date', '>=', $dateFrom);
         } elseif ($request->filled('date_to')) {
             $query->where('task_date', '<=', $dateTo);
-        }
-
-        if ($request->filled('department_id') || ($user->role === 'head' && $departmentId)) {
-            $query->where('department_id', $departmentId);
-        }
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $userId);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $status);
-        }
-        if ($request->filled('task_type')) {
-            $query->where('task_type', $taskType);
         }
 
         return $query;
@@ -74,7 +72,7 @@ class ReportController extends Controller
         $selfTypeCount = $tasks->where('task_type', 'self_reported')->count();
         $avgProgress = $totalTasks > 0 ? round($tasks->avg('progress'), 1) : 0;
 
-        // Group by employee
+        // Group by employee for performance leaderboard
         $employeePerformance = $tasks->groupBy('user_id')->map(function ($employeeTasks) {
             $emp = $employeeTasks->first()->user;
             $empTotal = $employeeTasks->count();
@@ -94,7 +92,7 @@ class ReportController extends Controller
             ];
         })->values()->sortByDesc('avg_progress')->values();
 
-        // Group by department
+        // Group by department for department chart
         $departmentPerformance = $tasks->groupBy('department_id')->map(function ($deptTasks) {
             $dept = $deptTasks->first()->department;
             $deptTotal = $deptTasks->count();
@@ -109,11 +107,15 @@ class ReportController extends Controller
             ];
         })->values();
 
-        $departments = Department::all();
+        $departmentsQuery = Department::query();
         $employeesQuery = User::where('role', 'employee');
+
         if ($user->role === 'head') {
+            $departmentsQuery->where('id', $user->department_id);
             $employeesQuery->where('department_id', $user->department_id);
         }
+
+        $departments = $departmentsQuery->get();
         $employees = $employeesQuery->get();
 
         return Inertia::render('Reports/Index', [
@@ -132,7 +134,7 @@ class ReportController extends Controller
             'departments' => $departments,
             'employees' => $employees,
             'filters' => [
-                'department_id' => $request->input('department_id', ''),
+                'department_id' => $user->role === 'head' ? $user->department_id : $request->input('department_id', ''),
                 'user_id' => $request->input('user_id', ''),
                 'status' => $request->input('status', ''),
                 'task_type' => $request->input('task_type', ''),
@@ -145,15 +147,6 @@ class ReportController extends Controller
     public function printReport(Request $request)
     {
         $user = $request->user();
-        $departmentId = $request->input('department_id');
-        if ($user->role === 'head') {
-            $departmentId = $user->department_id;
-        }
-
-        $userId = $request->input('user_id');
-        $dateFrom = $request->input('date_from', '2026-01-01');
-        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
-
         $query = $this->buildQuery($request, $user);
         $tasks = $query->latest('task_date')->get();
 
@@ -163,8 +156,9 @@ class ReportController extends Controller
         $pendingTasks = $tasks->where('status', 'pending')->count();
         $avgProgress = $totalTasks > 0 ? round($tasks->avg('progress'), 1) : 0;
 
+        $departmentId = $user->role === 'head' ? $user->department_id : $request->input('department_id');
         $department = $departmentId ? Department::find($departmentId) : null;
-        $employee = $userId ? User::find($userId) : null;
+        $employee = $request->filled('user_id') ? User::find($request->input('user_id')) : null;
 
         $departmentSummary = $tasks->groupBy('department_id')->map(function ($deptTasks) {
             $dept = $deptTasks->first()->department;
@@ -175,6 +169,9 @@ class ReportController extends Controller
                 'avg_progress' => round($deptTasks->avg('progress'), 1),
             ];
         })->values();
+
+        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
 
         return view('reports.printable_report', [
             'tasks' => $tasks,
@@ -196,15 +193,15 @@ class ReportController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         $user = $request->user();
-        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
-        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
-
         $query = $this->buildQuery($request, $user);
         $tasks = $query->latest('task_date')->get();
 
+        $dateFrom = $request->input('date_from', Carbon::today()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', Carbon::today()->toDateString());
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('تقرير المهام');
+        $sheet->setTitle('تقرير المهام المعتمد');
         $sheet->setRightToLeft(true);
 
         // Header Title
@@ -214,7 +211,8 @@ class ReportController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Meta info
-        $sheet->setCellValue('A2', "الفترة: من {$dateFrom} إلى {$dateTo} | تاريخ السحب: " . date('Y-m-d H:i') . " | المشرف: {$user->name}");
+        $deptName = $user->role === 'head' ? ($user->department?->name ?? 'القسم') : 'كافة الأقسام';
+        $sheet->setCellValue('A2', "الفترة: من {$dateFrom} إلى {$dateTo} | الكلية/القسم: {$deptName} | تاريخ السحب: " . date('Y-m-d H:i') . " | المشرف: {$user->name}");
         $sheet->mergeCells('A2:J2');
         $sheet->getStyle('A2')->getFont()->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

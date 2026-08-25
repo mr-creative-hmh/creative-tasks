@@ -41,13 +41,17 @@ const activeTab = ref('assigned'); // 'assigned' | 'self_reported'
 const selfReportForm = useForm({
   title: '',
   description: '',
-  progress: 100,
+  completion_rate: 100,
 });
 
 function addSelfTask() {
   if (!selfReportForm.title.trim()) return;
 
-  selfReportForm.post('/employee/tasks/self-reported', {
+  selfReportForm.transform(data => ({
+    title: data.title,
+    description: data.description,
+    progress: data.completion_rate,
+  })).post('/employee/tasks/self-reported', {
     preserveScroll: true,
     onSuccess: () => {
       selfReportForm.reset('title', 'description');

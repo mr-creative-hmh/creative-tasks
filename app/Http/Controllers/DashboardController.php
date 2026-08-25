@@ -23,7 +23,7 @@ class DashboardController extends Controller
             $departmentId = $user->department_id;
         }
 
-        // Query Tasks
+        // Query Tasks for today
         $taskQuery = Task::query()->whereDate('task_date', $today);
         if ($departmentId) {
             $taskQuery->where('department_id', $departmentId);
@@ -35,7 +35,7 @@ class DashboardController extends Controller
         $pendingTasks = (clone $taskQuery)->where('status', 'pending')->count();
         $avgProgress = $totalTasks > 0 ? round((clone $taskQuery)->avg('progress')) : 0;
 
-        // Query Attendance Logs
+        // Query Attendance Logs for today
         $attendanceQuery = AttendanceLog::with('user.department')->whereDate('log_date', $today);
         if ($departmentId) {
             $attendanceQuery->whereHas('user', function ($q) use ($departmentId) {
@@ -46,17 +46,23 @@ class DashboardController extends Controller
         $recentAttendanceLogs = (clone $attendanceQuery)->latest('id')->limit(8)->get();
 
         // Department list for filters
-        $departments = Department::withCount('users')->get();
-
-        // Recent tasks
-        $recentTasks = (clone $taskQuery)->with(['user', 'department', 'assigner'])->latest('id')->limit(8)->get();
-
-        // Department breakdown stats
-        $departmentStats = Department::withCount([
+        $departmentsQuery = Department::withCount('users');
+        $departmentStatsQuery = Department::withCount([
             'users',
             'tasks as today_tasks_count' => fn($q) => $q->whereDate('task_date', $today),
             'tasks as completed_tasks_count' => fn($q) => $q->whereDate('task_date', $today)->where('status', 'completed'),
-        ])->get();
+        ]);
+
+        if ($user->role === 'head') {
+            $departmentsQuery->where('id', $user->department_id);
+            $departmentStatsQuery->where('id', $user->department_id);
+        }
+
+        $departments = $departmentsQuery->get();
+        $departmentStats = $departmentStatsQuery->get();
+
+        // Recent tasks
+        $recentTasks = (clone $taskQuery)->with(['user', 'department', 'assigner'])->latest('id')->limit(8)->get();
 
         return Inertia::render('Dashboard/Index', [
             'stats' => [

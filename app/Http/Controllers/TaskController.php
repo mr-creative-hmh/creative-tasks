@@ -48,11 +48,13 @@ class TaskController extends Controller
         $tasks = $query->latest('id')->paginate(15)->withQueryString();
 
         // Fetch departments and eligible employees for task assignment
-        $departments = Department::with('users')->get();
+        $departmentsQuery = Department::with('users');
         $employeesQuery = User::where('role', 'employee')->where('is_active', true);
         if ($user->role === 'head') {
+            $departmentsQuery->where('id', $user->department_id);
             $employeesQuery->where('department_id', $user->department_id);
         }
+        $departments = $departmentsQuery->get();
         $employees = $employeesQuery->get();
 
         return Inertia::render('Tasks/Index', [
@@ -78,6 +80,7 @@ class TaskController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'task_date' => ['required', 'date'],
+            'progress' => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
 
         $assignee = User::findOrFail($validated['user_id']);
@@ -87,15 +90,18 @@ class TaskController extends Controller
             abort(403, 'لا يمكنك تعيين مهام لموظف خارج قسمك.');
         }
 
+        $progress = isset($validated['progress']) ? (int) $validated['progress'] : 0;
+        $status = $progress === 100 ? 'completed' : ($progress > 0 ? 'in_progress' : 'pending');
+
         Task::create([
             'department_id' => $assignee->department_id,
             'user_id' => $assignee->id,
             'assigned_by' => $user->id,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'progress' => 0,
+            'progress' => $progress,
             'task_type' => 'assigned',
-            'status' => 'pending',
+            'status' => $status,
             'task_date' => Carbon::parse($validated['task_date'])->toDateString(),
         ]);
 
