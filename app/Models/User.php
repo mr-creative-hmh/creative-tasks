@@ -14,16 +14,12 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'job_title',
         'email',
         'password',
         'department_id',
         'role',
         'is_active',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
     ];
 
     protected function casts(): array

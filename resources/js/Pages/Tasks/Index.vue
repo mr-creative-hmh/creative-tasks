@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
+import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
@@ -16,7 +16,8 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Briefcase
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -38,6 +39,10 @@ const props = defineProps({
   }
 });
 
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user || {});
+const isHead = computed(() => authUser.value.role === 'head');
+
 const filterForm = ref({
   department_id: props.filters.department_id || '',
   user_id: props.filters.user_id || '',
@@ -48,6 +53,7 @@ const filterForm = ref({
 
 const isModalOpen = ref(false);
 const editingTask = ref(null);
+const modalDepartmentId = ref('');
 
 const taskForm = useForm({
   user_id: '',
@@ -56,6 +62,17 @@ const taskForm = useForm({
   completion_rate: 0,
   status: 'pending',
   task_date: new Date().toISOString().split('T')[0],
+});
+
+// Dynamic filtered employees for assignment based on selected department in modal
+const filteredModalEmployees = computed(() => {
+  if (isHead.value) {
+    return props.employees.filter(e => e.department_id === authUser.value.department_id);
+  }
+  if (!modalDepartmentId.value) {
+    return props.employees;
+  }
+  return props.employees.filter(e => String(e.department_id) === String(modalDepartmentId.value));
 });
 
 // Watch completion_rate change inside edit modal to auto-update status field
@@ -82,7 +99,15 @@ function applyFilters() {
 function openCreateModal() {
   editingTask.value = null;
   taskForm.reset();
-  taskForm.user_id = props.employees[0]?.id || '';
+  
+  if (isHead.value) {
+    modalDepartmentId.value = authUser.value.department_id || '';
+  } else {
+    modalDepartmentId.value = filterForm.value.department_id || '';
+  }
+
+  const initialAssignee = filteredModalEmployees.value[0]?.id || '';
+  taskForm.user_id = initialAssignee;
   taskForm.completion_rate = 0;
   taskForm.status = 'pending';
   taskForm.task_date = filterForm.value.date || new Date().toISOString().split('T')[0];
@@ -91,9 +116,9 @@ function openCreateModal() {
 
 function openEditModal(task) {
   editingTask.value = task;
-  // Normalize date string to strictly YYYY-MM-DD
   const rawDate = task.task_date ? String(task.task_date).split('T')[0] : new Date().toISOString().split('T')[0];
   
+  modalDepartmentId.value = task.department_id || '';
   taskForm.user_id = task.user_id;
   taskForm.title = task.title;
   taskForm.description = task.description || '';
@@ -101,6 +126,12 @@ function openEditModal(task) {
   taskForm.status = task.status || (task.progress === 100 ? 'completed' : (task.progress > 0 ? 'in_progress' : 'pending'));
   taskForm.task_date = rawDate;
   isModalOpen.value = true;
+}
+
+function onModalDepartmentChange() {
+  // Reset assignee to first employee in the selected department
+  const firstInDept = filteredModalEmployees.value[0]?.id || '';
+  taskForm.user_id = firstInDept;
 }
 
 function submitTask() {
@@ -178,13 +209,14 @@ function deleteTask(task) {
           />
         </div>
 
-        <!-- Department -->
+        <!-- Department (Hidden or locked if Head) -->
         <div>
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
           <select
             v-model="filterForm.department_id"
             @change="applyFilters"
-            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100"
+            :disabled="isHead"
+            class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none text-slate-800 dark:text-slate-100 disabled:opacity-60"
           >
             <option value="">{{ t('allDepartments') }}</option>
             <option v-for="dept in departments" :key="dept.id" :value="dept.id">
@@ -203,7 +235,7 @@ function deleteTask(task) {
           >
             <option value="">{{ t('allEmployees') }}</option>
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-              {{ emp.name }}
+              {{ emp.name }} {{ emp.job_title ? `— ${emp.job_title}` : '' }}
             </option>
           </select>
         </div>
@@ -269,7 +301,10 @@ function deleteTask(task) {
               </td>
 
               <td class="py-3.5 px-4">
-                <span class="font-semibold text-slate-800 dark:text-slate-200">{{ task.user?.name }}</span>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">{{ task.user?.name }}</div>
+                <div v-if="task.user?.job_title" class="text-[10px] text-sky-600 dark:text-sky-400">
+                  {{ task.user.job_title }}
+                </div>
               </td>
 
               <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
@@ -344,7 +379,7 @@ function deleteTask(task) {
       </div>
     </div>
 
-    <!-- Create / Edit Modal -->
+    <!-- Create / Edit Modal with Cascading Department Filter -->
     <div v-if="isModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="isModalOpen = false">
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-6 shadow-2xl relative" @click.stop>
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
@@ -357,18 +392,39 @@ function deleteTask(task) {
         </div>
 
         <form @submit.prevent="submitTask" class="space-y-4 text-xs">
-          <!-- Assignee -->
+          <!-- Department Selector Filter (For Admin to narrow down Staff, or locked for Head) -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+              <span>{{ t('selectDepartmentFirst') }}</span>
+              <span v-if="isHead" class="text-[10px] text-sky-600 font-bold bg-sky-50 dark:bg-sky-950 px-2 py-0.5 rounded">
+                قسمك المعتمد (Your Dept)
+              </span>
+            </label>
+            <select
+              v-model="modalDepartmentId"
+              @change="onModalDepartmentChange"
+              :disabled="isHead || !!editingTask"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none disabled:opacity-60"
+            >
+              <option value="">{{ t('allDepartments') }} (كافة الكليات والأقسام)</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Assignee Selector (Shows filtered staff with Job Title & Department) -->
           <div>
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('assignTo') }} *</label>
             <select
               v-model="taskForm.user_id"
               required
               :disabled="!!editingTask"
-              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none disabled:opacity-60"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none disabled:opacity-60 font-medium"
             >
               <option value="" disabled>{{ t('selectEmployeePlaceholder') }}</option>
-              <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-                {{ emp.name }} ({{ emp.department?.name || t('department') }})
+              <option v-for="emp in filteredModalEmployees" :key="emp.id" :value="emp.id">
+                {{ emp.name }} {{ emp.job_title ? `— [${emp.job_title}]` : '' }} ({{ emp.department?.name || t('department') }})
               </option>
             </select>
           </div>
@@ -444,7 +500,7 @@ function deleteTask(task) {
               type="submit"
               class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold shadow-sm disabled:opacity-50 cursor-pointer transition-all"
             >
-              {{ taskForm.processing ? 'جاري الحفظ...' : t('save') }}
+              {{ taskForm.processing ? t('saving') : t('save') }}
             </button>
           </div>
         </form>

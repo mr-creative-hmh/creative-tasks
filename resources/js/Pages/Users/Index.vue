@@ -5,17 +5,19 @@ import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   Users,
-  Plus,
-  Edit2,
-  Trash2,
-  CheckCircle2,
-  XCircle,
+  UserPlus,
+  Search,
+  Filter,
   Shield,
   Building2,
-  Mail,
+  CheckCircle2,
+  XCircle,
+  Edit2,
+  Trash2,
   X,
-  Search,
-  Filter
+  Mail,
+  Lock,
+  Briefcase
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -30,10 +32,6 @@ const props = defineProps({
   filters: {
     type: Object,
     default: () => ({})
-  },
-  roles: {
-    type: Array,
-    default: () => []
   }
 });
 
@@ -48,6 +46,7 @@ const editingUser = ref(null);
 
 const userForm = useForm({
   name: '',
+  job_title: '',
   email: '',
   password: '',
   role: 'employee',
@@ -56,7 +55,13 @@ const userForm = useForm({
 });
 
 function applyFilters() {
-  router.get('/users', filterForm.value, { preserveState: true, replace: true });
+  const clean = {};
+  for (const [k, v] of Object.entries(filterForm.value)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      clean[k] = v;
+    }
+  }
+  router.get('/users', clean, { preserveState: true, replace: true });
 }
 
 function openCreateModal() {
@@ -64,17 +69,19 @@ function openCreateModal() {
   userForm.reset();
   userForm.role = 'employee';
   userForm.is_active = true;
+  userForm.job_title = '';
   isModalOpen.value = true;
 }
 
 function openEditModal(user) {
   editingUser.value = user;
   userForm.name = user.name;
+  userForm.job_title = user.job_title || '';
   userForm.email = user.email;
   userForm.password = '';
   userForm.role = user.role;
   userForm.department_id = user.department_id || '';
-  userForm.is_active = Boolean(user.is_active);
+  userForm.is_active = !!user.is_active;
   isModalOpen.value = true;
 }
 
@@ -98,14 +105,14 @@ function submitUser() {
   }
 }
 
-function toggleStatus(user) {
-  router.post(`/users/${user.id}/toggle-status`, {}, { preserveScroll: true });
-}
-
 function deleteUser(user) {
   if (confirm(t('confirmDeleteUser'))) {
     router.delete(`/users/${user.id}`, { preserveScroll: true });
   }
+}
+
+function toggleStatus(user) {
+  router.post(`/users/${user.id}/toggle-status`, {}, { preserveScroll: true });
 }
 </script>
 
@@ -113,41 +120,42 @@ function deleteUser(user) {
   <Head :title="t('navUsers')" />
 
   <AppLayout>
-    <!-- Header -->
+    <!-- Header with Add User Button -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
           {{ t('navUsers') }}
         </h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          إدارة حسابات الموظفين، رؤساء الأقسام، والصلاحيات الإدارية
+          إدارة حسابات الكوادر الأكاديمية والميدانية وتحديد الأدوار والمسميات الوظيفية
         </p>
       </div>
 
       <button
         @click="openCreateModal"
         type="button"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-sky-600/25 transition-all cursor-pointer"
       >
-        <Plus class="w-4 h-4" />
+        <UserPlus class="w-4 h-4" />
         <span>{{ t('addUser') }}</span>
       </button>
     </div>
 
     <!-- Filters Bar -->
     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Search -->
-        <div>
+        <div class="relative">
           <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('search') }}</label>
           <div class="relative">
             <input
               v-model="filterForm.search"
               @input="applyFilters"
               type="text"
-              class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 ps-9 outline-none text-slate-800 dark:text-slate-100"
+              :placeholder="t('search')"
+              class="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ps-8 pe-3 py-2 outline-none text-slate-800 dark:text-slate-100"
             />
-            <Search class="w-4 h-4 text-slate-400 absolute start-3 top-2.5" />
+            <Search class="w-3.5 h-3.5 text-slate-400 absolute start-2.5 top-2.5" />
           </div>
         </div>
 
@@ -168,7 +176,7 @@ function deleteUser(user) {
 
         <!-- Department Filter -->
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
+          <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('userDepartment') }}</label>
           <select
             v-model="filterForm.department_id"
             @change="applyFilters"
@@ -189,11 +197,13 @@ function deleteUser(user) {
         <table class="w-full text-start text-xs">
           <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
             <tr>
-              <th class="px-5 py-3.5 text-start">{{ t('userName') }}</th>
-              <th class="px-5 py-3.5 text-start">{{ t('userRole') }}</th>
-              <th class="px-5 py-3.5 text-start">{{ t('department') }}</th>
-              <th class="px-5 py-3.5 text-center">{{ t('userStatus') }}</th>
-              <th class="px-5 py-3.5 text-center">{{ t('actions') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('userName') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('jobTitle') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('email') }}</th>
+              <th class="px-5 py-4 text-center">{{ t('userRole') }}</th>
+              <th class="px-5 py-4 text-start">{{ t('userDepartment') }}</th>
+              <th class="px-5 py-4 text-center">{{ t('userStatus') }}</th>
+              <th class="px-5 py-4 text-center">{{ t('actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -202,21 +212,27 @@ function deleteUser(user) {
               :key="u.id"
               class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
             >
-              <!-- Name & Email -->
-              <td class="px-5 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-bold flex items-center justify-center shrink-0">
-                    {{ u.name?.charAt(0) || 'U' }}
-                  </div>
-                  <div>
-                    <div class="font-bold text-slate-900 dark:text-white">{{ u.name }}</div>
-                    <div class="text-[11px] text-slate-400 font-mono">{{ u.email }}</div>
-                  </div>
-                </div>
+              <!-- Name -->
+              <td class="px-5 py-4 font-bold text-slate-900 dark:text-white">
+                {{ u.name }}
               </td>
 
-              <!-- Role -->
-              <td class="px-5 py-4">
+              <!-- Job Title -->
+              <td class="px-5 py-4 text-slate-600 dark:text-slate-300 font-medium">
+                <span v-if="u.job_title" class="inline-flex items-center gap-1 text-sky-700 dark:text-sky-300 font-semibold bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded-md text-[11px]">
+                  <Briefcase class="w-3 h-3 text-sky-600" />
+                  <span>{{ u.job_title }}</span>
+                </span>
+                <span v-else class="text-slate-400">-</span>
+              </td>
+
+              <!-- Email -->
+              <td class="px-5 py-4 text-slate-500 font-mono text-[11px]">
+                {{ u.email }}
+              </td>
+
+              <!-- Role Badge -->
+              <td class="px-5 py-4 text-center">
                 <span 
                   :class="{
                     'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200': u.role === 'admin',
@@ -295,6 +311,17 @@ function deleteUser(user) {
               v-model="userForm.name"
               type="text"
               required
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
+            />
+          </div>
+
+          <!-- Job Title -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('jobTitle') }}</label>
+            <input
+              v-model="userForm.job_title"
+              type="text"
+              :placeholder="t('jobTitlePlaceholder')"
               class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500"
             />
           </div>

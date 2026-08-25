@@ -3,59 +3,70 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\Task;
 use App\Models\AttendanceLog;
-use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Admin
-        $admin = User::create([
-            'name' => 'المدير العام (Super Admin)',
-            'email' => 'admin@creative-tasks.test',
+        // 1. Create University Departments
+        $itDept = Department::create([
+            'name' => 'قسم تكنولوجيا المعلومات والاتصالات',
+            'work_start_time' => '08:00',
+            'work_end_time' => '15:00',
+        ]);
+
+        $engineeringMaintDept = Department::create([
+            'name' => 'قسم الصيانة والشؤون الهندسية',
+            'work_start_time' => '07:30',
+            'work_end_time' => '15:00',
+        ]);
+
+        $securityDept = Department::create([
+            'name' => 'شعبة المتابعة والأمن الجامعي',
+            'work_start_time' => '07:00',
+            'work_end_time' => '16:00',
+        ]);
+
+        $adminAffairsDept = Department::create([
+            'name' => 'قسم الشؤون الإدارية والمالية',
+            'work_start_time' => '08:30',
+            'work_end_time' => '15:00',
+        ]);
+
+        $qualityDept = Department::create([
+            'name' => 'شعبة ضمان الجودة والأداء الأكاديمي',
+            'work_start_time' => '08:30',
+            'work_end_time' => '14:30',
+        ]);
+
+        $studentsDept = Department::create([
+            'name' => 'قسم شؤون الطلبة والتسجيل',
+            'work_start_time' => '08:00',
+            'work_end_time' => '15:00',
+        ]);
+
+        // 2. Create Super Admin (University Presidency / General Management)
+        $superAdmin = User::create([
+            'name' => 'رئاسة جامعة المأمون',
+            'job_title' => 'رئيس الجامعة / المدير العام',
+            'email' => 'admin@almamonuc.edu.iq',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'department_id' => $adminAffairsDept->id,
             'is_active' => true,
         ]);
 
-        // 2. Create Departments
-        $operationsDept = Department::create([
-            'name' => 'قسم العمليات والمتابعة الميدانية',
-            'work_start_time' => '08:00:00',
-            'work_end_time' => '16:00:00',
-        ]);
-
-        $itDept = Department::create([
-            'name' => 'قسم تقنية المعلومات والدعم الفني',
-            'work_start_time' => '08:30:00',
-            'work_end_time' => '16:30:00',
-        ]);
-
-        $hrDept = Department::create([
-            'name' => 'قسم الموارد البشرية والشؤون الإدارية',
-            'work_start_time' => '08:00:00',
-            'work_end_time' => '15:30:00',
-        ]);
-
-        // 3. Create Department Heads
-        $headOps = User::create([
-            'name' => 'م. خالد المنصور (رئيس العمليات)',
-            'email' => 'head.ops@creative-tasks.test',
-            'password' => Hash::make('password'),
-            'department_id' => $operationsDept->id,
-            'role' => 'head',
-            'is_active' => true,
-        ]);
-        $operationsDept->update(['manager_id' => $headOps->id]);
-
+        // 3. Create Department Heads (Deans / Supervisors)
         $headIt = User::create([
-            'name' => 'م. طارق العلي (رئيس تقنية المعلومات)',
-            'email' => 'head.it@creative-tasks.test',
+            'name' => 'د. محمد الراوي',
+            'job_title' => 'أستاذ مساعد / رئيس قسم IT',
+            'email' => 'head.it@almamonuc.edu.iq',
             'password' => Hash::make('password'),
             'department_id' => $itDept->id,
             'role' => 'head',
@@ -63,78 +74,132 @@ class DatabaseSeeder extends Seeder
         ]);
         $itDept->update(['manager_id' => $headIt->id]);
 
-        // 4. Create Employees
-        $emp1 = User::create([
-            'name' => 'أحمد حسام (مفتش ميداني)',
-            'email' => 'ahmed@creative-tasks.test',
+        $headAdmin = User::create([
+            'name' => 'أ. هيثم الجبوري',
+            'job_title' => 'مدير الشؤون الإدارية',
+            'email' => 'head.admin@almamonuc.edu.iq',
             'password' => Hash::make('password'),
-            'department_id' => $operationsDept->id,
+            'department_id' => $adminAffairsDept->id,
+            'role' => 'head',
+            'is_active' => true,
+        ]);
+        $adminAffairsDept->update(['manager_id' => $headAdmin->id]);
+
+        $headSecurity = User::create([
+            'name' => 'العقيد م. عادل الشمري',
+            'job_title' => 'مسؤول المتابعة والأمن',
+            'email' => 'head.security@almamonuc.edu.iq',
+            'password' => Hash::make('password'),
+            'department_id' => $securityDept->id,
+            'role' => 'head',
+            'is_active' => true,
+        ]);
+        $securityDept->update(['manager_id' => $headSecurity->id]);
+
+        $headQuality = User::create([
+            'name' => 'د. نادية العبيدي',
+            'job_title' => 'مديرة ضمان الجودة',
+            'email' => 'head.quality@almamonuc.edu.iq',
+            'password' => Hash::make('password'),
+            'department_id' => $qualityDept->id,
+            'role' => 'head',
+            'is_active' => true,
+        ]);
+        $qualityDept->update(['manager_id' => $headQuality->id]);
+
+        // 4. Create Field & Academic Staff (Employees)
+        $emp1 = User::create([
+            'name' => 'علي الكرخي',
+            'job_title' => 'مهندس شبكات وبنية تحتية',
+            'email' => 'ali.it@almamonuc.edu.iq',
+            'password' => Hash::make('password'),
+            'department_id' => $itDept->id,
             'role' => 'employee',
             'is_active' => true,
         ]);
 
         $emp2 = User::create([
-            'name' => 'سارة الشمري (أخصائية متابعة)',
-            'email' => 'sara@creative-tasks.test',
+            'name' => 'عمر الدليمي',
+            'job_title' => 'مراقب متابعة وتفتيش ميداني',
+            'email' => 'omar.security@almamonuc.edu.iq',
             'password' => Hash::make('password'),
-            'department_id' => $operationsDept->id,
+            'department_id' => $securityDept->id,
             'role' => 'employee',
             'is_active' => true,
         ]);
 
         $emp3 = User::create([
-            'name' => 'محمد رضوان (مهندس شبكات ميداني)',
-            'email' => 'mohammed@creative-tasks.test',
+            'name' => 'م. حيدر البغدادي',
+            'job_title' => 'مسؤول صيانة التجهيزات الهندسية',
+            'email' => 'haider.eng@almamonuc.edu.iq',
             'password' => Hash::make('password'),
-            'department_id' => $itDept->id,
+            'department_id' => $engineeringMaintDept->id,
             'role' => 'employee',
             'is_active' => true,
         ]);
 
         $emp4 = User::create([
-            'name' => 'فاطمة الزهراء (دعم فني أنظمة)',
-            'email' => 'fatima@creative-tasks.test',
+            'name' => 'نور الهدى الربيعي',
+            'job_title' => 'أخصائية تدقيق جودة القاعات',
+            'email' => 'nour.quality@almamonuc.edu.iq',
             'password' => Hash::make('password'),
-            'department_id' => $itDept->id,
+            'department_id' => $qualityDept->id,
+            'role' => 'employee',
+            'is_active' => true,
+        ]);
+
+        $emp5 = User::create([
+            'name' => 'زينب الموسوي',
+            'job_title' => 'مشرفة تسجيل وإرشاد الطلبة',
+            'email' => 'zainab.reg@almamonuc.edu.iq',
+            'password' => Hash::make('password'),
+            'department_id' => $studentsDept->id,
             'role' => 'employee',
             'is_active' => true,
         ]);
 
         $today = Carbon::today()->toDateString();
-        $nowTime = Carbon::now()->toTimeString();
 
         // 5. Seed Attendance Logs
         AttendanceLog::create([
             'user_id' => $emp1->id,
-            'latitude' => 24.7136,
-            'longitude' => 46.6753,
+            'latitude' => 33.31524,
+            'longitude' => 44.36612,
             'log_date' => $today,
             'log_time' => '08:05:00',
         ]);
 
         AttendanceLog::create([
             'user_id' => $emp2->id,
-            'latitude' => 24.7250,
-            'longitude' => 46.6890,
+            'latitude' => 33.31680,
+            'longitude' => 44.36750,
+            'log_date' => $today,
+            'log_time' => '07:45:00',
+        ]);
+
+        AttendanceLog::create([
+            'user_id' => $emp3->id,
+            'latitude' => 33.31400,
+            'longitude' => 44.36480,
             'log_date' => $today,
             'log_time' => '08:12:00',
         ]);
 
         AttendanceLog::create([
-            'user_id' => $emp3->id,
-            'latitude' => 24.7410,
-            'longitude' => 46.6520,
+            'user_id' => $emp4->id,
+            'latitude' => 33.31590,
+            'longitude' => 44.36550,
             'log_date' => $today,
-            'log_time' => '08:35:00',
+            'log_time' => '08:30:00',
         ]);
 
-        // 6. Seed Sample Tasks for today
+        // 6. Seed Tasks for Today
         Task::create([
-            'department_id' => $operationsDept->id,
+            'department_id' => $itDept->id,
             'user_id' => $emp1->id,
-            'assigned_by' => $headOps->id,
-            'title' => 'معاينة الموقع الإنشائي في الفرع الشمالي',
-            'description' => 'التأكد من التزام مقاولي التجهيزات بالمواصفات الفنية المعتمدة ورفع تقرير السلامة.',
+            'assigned_by' => $headIt->id,
+            'title' => 'فحص سيرفرات الامتحانات الإلكترونية ومسار بولونيا',
+            'description' => 'التأكد من جاهزية شبكة الألياف الضوئية والخوادم المحلية في قاعات الكلية التقنية الهندسية.',
             'progress' => 50,
             'task_type' => 'assigned',
             'status' => 'in_progress',
@@ -142,11 +207,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Task::create([
-            'department_id' => $operationsDept->id,
+            'department_id' => $itDept->id,
             'user_id' => $emp1->id,
-            'assigned_by' => $headOps->id,
-            'title' => 'مطابقة جداول استلام المواد الميدانية',
-            'description' => 'مراجعة أذونات التوريد والتوقيع عليها مع مراقب المستودع الفرعي.',
+            'assigned_by' => $headIt->id,
+            'title' => 'ربط كاميرات المراقبة الجديدة في مجمع القاعات الطبية',
+            'description' => 'إكمال إعدادات الـ IP وتسجيل البث المباشر في غرفة التحكم المركزية.',
             'progress' => 100,
             'task_type' => 'assigned',
             'status' => 'completed',
@@ -154,11 +219,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Task::create([
-            'department_id' => $operationsDept->id,
+            'department_id' => $itDept->id,
             'user_id' => $emp1->id,
             'assigned_by' => null,
-            'title' => 'تسجيل تقرير الملاحظات الفورية عبر الجهاز اللوحي',
-            'description' => 'إدخال ملاحظات الزيارة الاستثنائية بطلب من مشرف الأمن.',
+            'title' => 'معايرة أجهزة البصمة الإلكترونية عند مدخل كلية الصيدلة',
+            'description' => 'تحديث قاعدة بيانات الموظفين وإجراء اختبار تسجيل الحضور.',
             'progress' => 100,
             'task_type' => 'self_reported',
             'status' => 'completed',
@@ -166,11 +231,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Task::create([
-            'department_id' => $operationsDept->id,
+            'department_id' => $securityDept->id,
             'user_id' => $emp2->id,
-            'assigned_by' => $headOps->id,
-            'title' => 'تدقيق تقارير الإنجاز اليومي للفرق الميدانية',
-            'description' => 'تجميع مخرجات الفرق وإعداد ملخص تنفيذي للإدارة.',
+            'assigned_by' => $headSecurity->id,
+            'title' => 'جولة التفتيش الأمني الميداني لمحيط الحرم الجامعي والبوابات',
+            'description' => 'التأكد من انسيابية حركة الدخول وتدقيق باجات الطلبة والأساتذة.',
             'progress' => 75,
             'task_type' => 'assigned',
             'status' => 'in_progress',
@@ -178,11 +243,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Task::create([
-            'department_id' => $itDept->id,
-            'user_id' => $emp3->id,
-            'assigned_by' => $headIt->id,
-            'title' => 'صيانة وفحص نقطة الربط اللاسلكي بالمقر الفرعي',
-            'description' => 'معايرة أجهزة التوجيه والتأكد من استقرار سرعة الاتصال وجودة الخدمة.',
+            'department_id' => $qualityDept->id,
+            'user_id' => $emp4->id,
+            'assigned_by' => $headQuality->id,
+            'title' => 'تدقيق مطابقة معايير الاعتماد المؤسسي في مختبرات التحليلات',
+            'description' => 'فحص سجلات الأجهزة والمواد المختبرية ومطابقتها لتعليمات وزارة التعليم العالي.',
             'progress' => 25,
             'task_type' => 'assigned',
             'status' => 'in_progress',
@@ -190,13 +255,13 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Task::create([
-            'department_id' => $itDept->id,
-            'user_id' => $emp4->id,
-            'assigned_by' => $headIt->id,
-            'title' => 'تحديث تراخيص البرمجيات لأجهزة موظفي القسم',
-            'description' => 'تثبيت التحديثات الأمنية وتجديد شهادات الوصول.',
+            'department_id' => $studentsDept->id,
+            'user_id' => $emp5->id,
+            'assigned_by' => null,
+            'title' => 'استلام وتدقيق وثائق الطلبة المتقدمين للدراسة المسائية',
+            'description' => 'إدخال بيانات 45 استمارة في المنظومة المركزية ومطابقة صور القيد.',
             'progress' => 100,
-            'task_type' => 'assigned',
+            'task_type' => 'self_reported',
             'status' => 'completed',
             'task_date' => $today,
         ]);
