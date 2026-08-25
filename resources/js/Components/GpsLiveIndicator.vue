@@ -3,9 +3,8 @@ import { ref } from 'vue';
 import { gpsState } from '@/Services/gpsTracker';
 import { t } from '@/i18n';
 import {
-  Navigation,
   Radio,
-  CheckCircle2,
+  Navigation,
   AlertTriangle,
   RefreshCw,
   X,
@@ -38,7 +37,7 @@ function triggerManualSync() {
       },
       (err) => {
         gpsState.isSyncing = false;
-        gpsState.error = err.message || 'تعذر تحديد الموقع';
+        gpsState.error = err.message || t('connectionFailed');
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -60,7 +59,7 @@ function triggerManualSync() {
             : 'bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/70 hover:bg-amber-100 dark:hover:bg-amber-900/60')
       ]"
       class="h-9 px-3 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 font-bold text-xs"
-      :title="gpsState.isVerified ? 'تتبع الموقع الجغرافي نشط في الخلفية (GPS Live)' : (gpsState.error || 'جاري الاتصال بالـ GPS...')"
+      :title="gpsState.isVerified ? t('gpsVerified') : (gpsState.error || t('gpsSearching'))"
     >
       <!-- Pulsing Dot Indicator -->
       <span class="relative flex h-2.5 w-2.5">
@@ -80,14 +79,14 @@ function triggerManualSync() {
 
       <!-- Label -->
       <span class="font-bold">
-        {{ gpsState.isVerified ? 'GPS Live' : (gpsState.error ? 'GPS تنبيه' : 'GPS...') }}
+        {{ gpsState.isVerified ? t('gpsLivePill') : (gpsState.error ? t('gpsOffPill') : t('gpsWaiting')) }}
       </span>
 
       <!-- Offline Backlog Badge if any -->
       <span
         v-if="gpsState.offlineQueueCount > 0"
         class="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-mono font-black"
-        title="سجلات بانتظار المزامنة"
+        :title="t('gpsOfflineQueue')"
       >
         {{ gpsState.offlineQueueCount }}
       </span>
@@ -119,8 +118,8 @@ function triggerManualSync() {
             <Radio class="w-4 h-4" />
           </div>
           <div>
-            <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">تتبع الحضور الميداني (GPS)</h4>
-            <p class="text-[10px] text-slate-400 mt-0.5">تحديث تلقائي في الخلفية</p>
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ t('gpsLiveTitle') }}</h4>
+            <p class="text-[10px] text-slate-400 mt-0.5">{{ t('gpsLiveSubtitle') }}</p>
           </div>
         </div>
         <button @click="isOpen = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
@@ -134,13 +133,13 @@ function triggerManualSync() {
         <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60">
           <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
             <ShieldCheck class="w-3.5 h-3.5 text-accent" />
-            <span>حالة التوثيق:</span>
+            <span>{{ t('gpsStatusLabel') }}:</span>
           </span>
           <span
             :class="gpsState.isVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'"
-            class="font-black font-mono text-[11px]"
+            class="font-black text-[11px]"
           >
-            {{ gpsState.isVerified ? 'موثق جغرافياً' : 'جاري التحقق...' }}
+            {{ gpsState.isVerified ? t('gpsVerified') : t('gpsSearching') }}
           </span>
         </div>
 
@@ -148,7 +147,7 @@ function triggerManualSync() {
         <div v-if="gpsState.latitude" class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 font-mono">
           <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-sans font-semibold">
             <MapPin class="w-3.5 h-3.5 text-sky-500" />
-            <span>الإحداثيات:</span>
+            <span>{{ t('gpsCoordinates') }}:</span>
           </span>
           <span class="text-slate-800 dark:text-slate-200 font-bold text-[11px]">
             {{ gpsState.latitude?.toFixed(5) }}, {{ gpsState.longitude?.toFixed(5) }}
@@ -159,10 +158,10 @@ function triggerManualSync() {
         <div v-if="gpsState.accuracy" class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60">
           <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
             <Navigation class="w-3.5 h-3.5 text-teal-500" />
-            <span>دقة الإشارة:</span>
+            <span>{{ t('gpsAccuracy') }}:</span>
           </span>
           <span class="text-slate-800 dark:text-slate-200 font-bold font-mono text-[11px]">
-            ± {{ gpsState.accuracy }} متر
+            ± {{ gpsState.accuracy }} {{ t('meters') }}
           </span>
         </div>
 
@@ -170,10 +169,10 @@ function triggerManualSync() {
         <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60">
           <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
             <Clock class="w-3.5 h-3.5 text-amber-500" />
-            <span>آخر مزامنة:</span>
+            <span>{{ t('gpsLastSync') }}:</span>
           </span>
           <span class="text-slate-800 dark:text-slate-200 font-bold font-mono text-[11px]">
-            {{ gpsState.lastSyncTime || 'الآن' }}
+            {{ gpsState.lastSyncTime || '—' }}
           </span>
         </div>
 
@@ -193,7 +192,7 @@ function triggerManualSync() {
           class="w-full h-9 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <RefreshCw :class="{ 'animate-spin': gpsState.isSyncing }" class="w-3.5 h-3.5" />
-          <span>{{ gpsState.isSyncing ? 'جاري المزامنة...' : 'تحديث الموقع الآن' }}</span>
+          <span>{{ gpsState.isSyncing ? t('gpsSyncing') : t('gpsSyncNow') }}</span>
         </button>
       </div>
     </div>

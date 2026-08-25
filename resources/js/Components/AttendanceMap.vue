@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { t } from '@/i18n';
 
 const props = defineProps({
   points: {
@@ -157,12 +158,12 @@ function renderMarkers() {
     const marker = leafletInstance.marker([point.latitude, point.longitude], { icon: userIcon });
 
     const popupContent = `
-      <div class="p-2 text-start font-sans" dir="rtl">
-        <div class="font-bold text-slate-900 text-xs">${point.user_name || 'موظف'}</div>
-        <div class="text-[11px] text-sky-600 font-semibold">${point.department_name || 'قسم غير محدد'}</div>
-        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
-          <span>⏰ وقت الحضور:</span>
-          <span class="font-mono font-bold">${point.log_time || '--:--'}</span>
+      <div class="p-2 text-start font-sans">
+        <div class="font-bold text-slate-900 text-xs">${point.user_name || t('employee')}</div>
+        <div class="text-[11px] text-sky-600 font-semibold">${point.department_name || t('department')}</div>
+        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1 font-mono">
+          <span>${t('tableLogTime')}:</span>
+          <span class="font-bold text-slate-800">${point.log_time || '--:--'}</span>
         </div>
       </div>
     `;
@@ -213,7 +214,7 @@ onUnmounted(() => {
     <div class="absolute top-3 end-3 z-10 flex flex-col gap-2">
       <div v-if="editable" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-[11px] font-bold shadow-lg flex items-center gap-1.5 animate-pulse">
         <span class="w-2 h-2 rounded-full bg-white"></span>
-        <span>وضع التحديد اليدوي نشط (انقر لتثبيت الموقع)</span>
+        <span>{{ t('mapHintAdmin') }}</span>
       </div>
     </div>
   </div>
