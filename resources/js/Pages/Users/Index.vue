@@ -5,6 +5,7 @@ import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import PageBanner from '@/Components/PageBanner.vue';
+import LocationPickerMap from '@/Components/LocationPickerMap.vue';
 import {
   Users,
   UserPlus,
@@ -961,6 +962,18 @@ function submitImport() {
           </div>
 
           <!-- Coordinates Inputs -->
+          <!-- Interactive Location Picker Map -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              تحديد الموقع الدقيق على الخريطة (انقر أو اسحب الدبوس)
+            </label>
+            <LocationPickerMap
+              v-model:lat="locationForm.fixed_latitude"
+              v-model:lng="locationForm.fixed_longitude"
+              height="220px"
+            />
+          </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">

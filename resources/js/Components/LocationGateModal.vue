@@ -1,8 +1,9 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import { gpsState, syncCurrentGpsLocation, sendCoordinates } from '@/Services/gpsTracker';
+import LocationPickerMap from '@/Components/LocationPickerMap.vue';
 import {
   MapPin,
   AlertTriangle,
@@ -13,7 +14,8 @@ import {
   Lock,
   Sparkles,
   Radio,
-  Building2
+  Building2,
+  Check
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -30,6 +32,14 @@ const todayAttendance = computed(() => page.props.todayAttendance);
 
 const isAdmin = computed(() => authUser.value?.role === 'admin');
 const isFixedMode = computed(() => authUser.value?.attendance_mode === 'fixed');
+
+// Baghdad Al-Ma'moon University Default Campus Coordinates
+const campusDefaultLat = 33.31524;
+const campusDefaultLng = 44.36612;
+
+const selectedLat = ref(campusDefaultLat);
+const selectedLng = ref(campusDefaultLng);
+const isConfirming = ref(false);
 
 // GPS is considered locked/blocked if:
 // 1. User is non-admin AND not in fixed workplace mode AND
@@ -73,11 +83,12 @@ function handleRetryGps() {
   syncCurrentGpsLocation();
 }
 
-function handleSimulateCampus() {
-  // Baghdad Al-Ma'moon University Coordinates for Testing & Localhost Demo
-  const campusLat = 33.31524;
-  const campusLng = 44.36612;
-  sendCoordinates(campusLat, campusLng, 15);
+function handleConfirmMapLocation() {
+  isConfirming.value = true;
+  sendCoordinates(selectedLat.value, selectedLng.value, 15);
+  setTimeout(() => {
+    isConfirming.value = false;
+  }, 1000);
 }
 
 onMounted(() => {
@@ -88,75 +99,96 @@ onMounted(() => {
 <template>
   <div>
     <!-- ========================================================= -->
-    <!-- 1. STRICT MANDATORY GPS ENFORCEMENT LOCK OVERLAY          -->
+    <!-- 1. STRICT MANDATORY GPS / CAMPUS LOCATION ENFORCEMENT     -->
     <!-- (Shown whenever GPS is disabled / denied / unverified)    -->
     <!-- ========================================================= -->
     <div
       v-if="isGpsLocked"
-      class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 select-none animate-fade-in"
+      class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto animate-fade-in"
     >
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl text-center relative overflow-hidden my-auto space-y-4">
         
         <!-- Ambient Glow -->
         <div class="absolute -top-16 -left-16 w-44 h-44 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-16 -right-16 w-44 h-44 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- Radar Animation & Lock Icon -->
-        <div class="relative w-20 h-20 mx-auto mb-5 flex items-center justify-center">
+        <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
           <div
             v-if="gpsState.isSyncing"
             class="absolute inset-0 rounded-full bg-sky-500/20 animate-ping"
           ></div>
           <div
-            :class="gpsState.isSyncing ? 'bg-gradient-to-tr from-sky-600 to-teal-500 shadow-sky-500/30' : 'bg-gradient-to-tr from-rose-600 to-amber-600 shadow-rose-500/30'"
-            class="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all"
+            :class="gpsState.isSyncing ? 'bg-gradient-to-tr from-sky-600 to-teal-500 shadow-sky-500/30' : 'bg-gradient-to-tr from-sky-600 to-teal-600 shadow-sky-500/30'"
+            class="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all"
           >
-            <Radio v-if="gpsState.isSyncing" class="w-8 h-8 animate-pulse text-white" />
-            <Lock v-else class="w-8 h-8 text-white" />
+            <Radio v-if="gpsState.isSyncing" class="w-7 h-7 animate-pulse text-white" />
+            <MapPin v-else class="w-7 h-7 text-white" />
           </div>
         </div>
 
         <!-- Title -->
-        <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white mb-1.5 leading-snug">
-          {{ gpsState.isSyncing ? t('gpsGateScanning') : t('gpsGateTitle') }}
-        </h2>
+        <div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
+            {{ gpsState.isSyncing ? t('gpsGateScanning') : t('gpsGateTitle') }}
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-medium">
+            {{ gpsState.isSyncing ? t('gpsGateScanningDesc') : 'خدمة الـ GPS معطلة أو غير متوفرة. يمكنك تحديد وتأكيد موقعك بالحرم الجامعي على الخريطة لتسجيل الحضور وتفعيل النظام.' }}
+          </p>
+        </div>
 
-        <!-- Description -->
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed font-medium">
-          {{ gpsState.isSyncing ? t('gpsGateScanningDesc') : t('gpsGateDesc') }}
-        </p>
+        <!-- Interactive Map Picker (Defaults to Baghdad Al-Ma'moon University) -->
+        <div class="space-y-2 text-start">
+          <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+            <span class="flex items-center gap-1.5">
+              <Building2 class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              <span>موقع الحرم الجامعي الافتراضي (انقر أو اسحب لتحديد النقطة)</span>
+            </span>
+            <span class="font-mono text-[10px] text-slate-400">
+              {{ Number(selectedLat).toFixed(4) }}, {{ Number(selectedLng).toFixed(4) }}
+            </span>
+          </div>
 
-        <!-- Current Error Message Box -->
+          <!-- Leaflet Interactive Map -->
+          <LocationPickerMap
+            v-model:lat="selectedLat"
+            v-model:lng="selectedLng"
+            height="210px"
+            :zoom="16"
+          />
+        </div>
+
+        <!-- Current Error Status Alert if any -->
         <div
           v-if="gpsState.error"
-          class="mb-5 p-3.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 rounded-2xl text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2.5 text-start font-medium"
+          class="p-2.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2 text-start font-medium"
         >
-          <AlertTriangle class="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-          <span>{{ gpsState.error }}</span>
+          <AlertTriangle class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span>{{ gpsState.error }} (تم تفعيل خريطة الحرم الجامعي كبديل معتمد).</span>
         </div>
 
         <!-- Actions -->
-        <div class="space-y-2.5">
-          <!-- Primary Retry Button -->
+        <div class="space-y-2 pt-1">
+          <!-- Confirm Location on Map -->
+          <button
+            @click="handleConfirmMapLocation"
+            :disabled="isConfirming || gpsState.isSyncing"
+            type="button"
+            class="w-full py-3 px-4 rounded-2xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <CheckCircle2 class="w-4 h-4" />
+            <span>تأكيد التواجد بالحرم الجامعي وفتح المهام</span>
+          </button>
+
+          <!-- Retry GPS Hardware -->
           <button
             @click="handleRetryGps"
             :disabled="gpsState.isSyncing"
             type="button"
-            class="w-full py-3 px-4 rounded-2xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            class="w-full py-2.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
-            <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': gpsState.isSyncing }" />
-            <span>{{ gpsState.isSyncing ? t('gpsScanningBtn') : t('gpsRetryBtn') }}</span>
-          </button>
-
-          <!-- Fallback simulation for Localhost & Demo testing -->
-          <button
-            @click="handleSimulateCampus"
-            :disabled="gpsState.isSyncing"
-            type="button"
-            class="w-full py-2.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Sparkles class="w-3.5 h-3.5 text-amber-500" />
-            <span>{{ t('gpsDemoSimulation') }}</span>
+            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': gpsState.isSyncing }" />
+            <span>{{ gpsState.isSyncing ? t('gpsScanningBtn') : 'إعادة محاولة تشغيل الـ GPS' }}</span>
           </button>
         </div>
 
