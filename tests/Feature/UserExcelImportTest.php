@@ -40,30 +40,26 @@ class UserExcelImportTest extends TestCase
             'work_end_time' => '15:30:00',
         ]);
 
-        // Create a temporary Excel file for testing
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         
         $sheet->setCellValue('A4', 'الاسم الكامل');
         $sheet->setCellValue('B4', 'البريد الإلكتروني');
         $sheet->setCellValue('C4', 'المسمى الوظيفي');
-        $sheet->setCellValue('D4', 'الكلية أو القسم');
-        $sheet->setCellValue('E4', 'الدور');
-        $sheet->setCellValue('F4', 'كلمة المرور');
+        $sheet->setCellValue('D4', 'القسم');
+        $sheet->setCellValue('E4', 'الدور والصلاحية');
 
         $sheet->setCellValue('A5', 'أحمد محمود');
         $sheet->setCellValue('B5', 'ahmed.m@almamonuc.edu.iq');
-        $sheet->setCellValue('C5', 'مدرس دكتور');
+        $sheet->setCellValue('C5', 'مقرر قسم');
         $sheet->setCellValue('D5', 'قسم علوم الحاسوب');
         $sheet->setCellValue('E5', 'head');
-        $sheet->setCellValue('F5', 'secret123');
 
         $sheet->setCellValue('A6', 'مريم جاسم');
         $sheet->setCellValue('B6', 'maryam.j@almamonuc.edu.iq');
         $sheet->setCellValue('C6', 'مهندسة برمجيات');
         $sheet->setCellValue('D6', 'كلية جديدة');
         $sheet->setCellValue('E6', 'employee');
-        $sheet->setCellValue('F6', 'password');
 
         $tempPath = tempnam(sys_get_temp_dir(), 'test_excel_') . '.xlsx';
         $writer = new Xlsx($spreadsheet);
@@ -81,9 +77,10 @@ class UserExcelImportTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'ahmed.m@almamonuc.edu.iq',
             'name' => 'أحمد محمود',
-            'job_title' => 'مدرس دكتور',
+            'job_title' => 'مقرر قسم',
             'role' => 'head',
             'department_id' => $dept->id,
+            'attendance_mode' => 'gps',
         ]);
 
         $this->assertDatabaseHas('users', [
@@ -91,6 +88,7 @@ class UserExcelImportTest extends TestCase
             'name' => 'مريم جاسم',
             'job_title' => 'مهندسة برمجيات',
             'role' => 'employee',
+            'attendance_mode' => 'gps',
         ]);
 
         $this->assertDatabaseHas('departments', [

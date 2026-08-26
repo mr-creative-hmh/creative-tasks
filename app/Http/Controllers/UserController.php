@@ -215,18 +215,19 @@ class UserController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         
-        // --- Sheet 1: Main Template ---
+        // --- Sheet 1: Main Template (Streamlined 5 Columns) ---
         $sheet1 = $spreadsheet->getActiveSheet();
         $sheet1->setTitle('الكوادر (Staff)');
         $sheet1->setRightToLeft(true);
 
+        // Header Title & Instructions
         $sheet1->setCellValue('A1', 'جامعة المأمون - نموذج استيراد الكوادر والمستخدمين');
-        $sheet1->mergeCells('A1:J1');
+        $sheet1->mergeCells('A1:E1');
         $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0284C7'));
         $sheet1->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet1->setCellValue('A2', 'ملاحظة: املأ البيانات ابتداءً من الصف 5. نمط الحضور الافتراضي: gps أو fixed. الموقع الافتراضي: حرم جامعة المأمون.');
-        $sheet1->mergeCells('A2:J2');
+        $sheet1->setCellValue('A2', 'ملاحظة: اختر القسم والدور مباشرة من القوائم المنسدلة (Dropdown Lists). كلمة المرور والـ GPS يتم تعيينها افتراضياً.');
+        $sheet1->mergeCells('A2:E2');
         $sheet1->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet1->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -234,20 +235,15 @@ class UserController extends Controller
             'A4' => 'الاسم الكامل * (Full Name)',
             'B4' => 'البريد الإلكتروني * (Email)',
             'C4' => 'المسمى الوظيفي (Job Title)',
-            'D4' => 'اسم القسم (Department Name)',
-            'E4' => 'الدور * (Role: admin, head, employee)',
-            'F4' => 'نمط الحضور (gps / fixed)',
-            'G4' => 'اسم المقر الثابت (Location Name)',
-            'H4' => 'خط العرض (Latitude)',
-            'I4' => 'خط الطول (Longitude)',
-            'J4' => 'كلمة المرور (Password)',
+            'D4' => 'القسم * (اختر من القائمة)',
+            'E4' => 'الدور والصلاحية * (اختر من القائمة)',
         ];
 
         foreach ($headers as $cell => $text) {
             $sheet1->setCellValue($cell, $text);
         }
 
-        $sheet1->getStyle('A4:J4')->applyFromArray([
+        $sheet1->getStyle('A4:E4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF0369A1']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -255,10 +251,11 @@ class UserController extends Controller
         ]);
         $sheet1->getRowDimension(4)->setRowHeight(28);
 
+        // Sample rows
         $samples = [
-            ['د. محمد الراوي', 'm.alrawi@almamonuc.edu.iq', 'عميد الكلية', 'عمادة الكلية', 'head', 'fixed', 'حرم جامعة المأمون الرئيسي', 33.31524, 44.36612, 'Mamon@2026'],
-            ['أ. هيثم الجبوري', 'h.aljuboori@almamonuc.edu.iq', 'رئيس قسم الحاسوب', 'قسم هندسة تقنيات الحاسوب', 'head', 'fixed', 'مبنى كلية الهندسة', 33.31570, 44.36620, 'Mamon@2026'],
-            ['م. حيدر البغدادي', 'h.albaghdadi@almamonuc.edu.iq', 'مهندس برمجيات ومتابعة ميدانية', 'قسم هندسة تقنيات الحاسوب', 'employee', 'gps', 'حرم جامعة المأمون الرئيسي', 33.31524, 44.36612, 'Mamon@2026'],
+            ['د. محمد الراوي', 'm.alrawi@almamonuc.edu.iq', 'عميد الكلية', 'عمادة الكلية', 'رئيس قسم (head)'],
+            ['أ. هيثم الجبوري', 'h.aljuboori@almamonuc.edu.iq', 'مقرر قسم الحاسوب', 'قسم هندسة تقنيات الحاسوب', 'رئيس قسم (head)'],
+            ['م. حيدر البغدادي', 'h.albaghdadi@almamonuc.edu.iq', 'مهندس برمجيات ونظم', 'قسم هندسة تقنيات الحاسوب', 'موظف (employee)'],
         ];
 
         $row = 5;
@@ -268,13 +265,8 @@ class UserController extends Controller
             $sheet1->setCellValue("C{$row}", $sample[2]);
             $sheet1->setCellValue("D{$row}", $sample[3]);
             $sheet1->setCellValue("E{$row}", $sample[4]);
-            $sheet1->setCellValue("F{$row}", $sample[5]);
-            $sheet1->setCellValue("G{$row}", $sample[6]);
-            $sheet1->setCellValue("H{$row}", $sample[7]);
-            $sheet1->setCellValue("I{$row}", $sample[8]);
-            $sheet1->setCellValue("J{$row}", $sample[9]);
 
-            $sheet1->getStyle("A{$row}:J{$row}")->applyFromArray([
+            $sheet1->getStyle("A{$row}:E{$row}")->applyFromArray([
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE2E8F0']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
@@ -282,63 +274,71 @@ class UserController extends Controller
             $row++;
         }
 
-        foreach (range('A', 'J') as $col) {
-            $sheet1->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        // --- Sheet 2: Reference of Existing Departments ---
+        // --- Sheet 2: Data Sources for Dropdown Validation ---
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('الأقسام (Departments)');
         $sheet2->setRightToLeft(true);
 
-        $sheet2->setCellValue('A1', 'دليل وأسماء الأقسام المعتمدة في النظام');
-        $sheet2->mergeCells('A1:D1');
-        $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(12)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0D9488'));
-        $sheet2->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet2->setCellValue('A1', 'قائمة الأقسام المعتمدة');
+        $sheet2->setCellValue('B1', 'الأدوار والصلاحيات');
 
-        $deptHeaders = [
-            'A3' => '# (ID)',
-            'B3' => 'اسم القسم / الشعبة (Department Name)',
-            'C3' => 'رئيس القسم (Current Manager)',
-            'D3' => 'الدوام الرسمي (Working Shift)',
-        ];
-
-        foreach ($deptHeaders as $cell => $text) {
-            $sheet2->setCellValue($cell, $text);
+        $departments = Department::orderBy('name')->pluck('name')->toArray();
+        if (empty($departments)) {
+            $departments = ['عمادة الكلية', 'قسم هندسة تقنيات الحاسوب', 'قسم الصيدلة', 'الشؤون الإدارية والمالية'];
         }
 
-        $sheet2->getStyle('A3:D3')->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF0F766E']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFCBD5E1']]],
-        ]);
-        $sheet2->getRowDimension(3)->setRowHeight(26);
+        foreach ($departments as $idx => $deptName) {
+            $dRow = $idx + 2;
+            $sheet2->setCellValue("A{$dRow}", $deptName);
+        }
+        $lastDeptRow = count($departments) + 1;
 
-        $departments = Department::with('manager')->orderBy('id')->get();
-        $dRow = 4;
-        foreach ($departments as $d) {
-            $sheet2->setCellValue("A{$dRow}", $d->id);
-            $sheet2->setCellValue("B{$dRow}", $d->name);
-            $sheet2->setCellValue("C{$dRow}", $d->manager?->name ?? 'غير محدد');
-            $sheet2->setCellValue("D{$dRow}", substr($d->work_start_time, 0, 5) . ' - ' . substr($d->work_end_time, 0, 5));
+        $roles = ['موظف (employee)', 'رئيس قسم (head)', 'مدير نظام (admin)'];
+        foreach ($roles as $idx => $roleName) {
+            $rRow = $idx + 2;
+            $sheet2->setCellValue("B{$rRow}", $roleName);
+        }
+        $lastRoleRow = count($roles) + 1;
 
-            $sheet2->getStyle("A{$dRow}:D{$dRow}")->applyFromArray([
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE2E8F0']]],
-                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-            ]);
-            $sheet2->getRowDimension($dRow)->setRowHeight(20);
-            $dRow++;
+        // Set Dropdown Data Validation for Rows 5 to 500
+        for ($r = 5; $r <= 500; $r++) {
+            // Department Dropdown
+            $deptVal = $sheet1->getCell("D{$r}")->getDataValidation();
+            $deptVal->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $deptVal->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+            $deptVal->setAllowBlank(true);
+            $deptVal->setShowInputMessage(true);
+            $deptVal->setShowErrorMessage(true);
+            $deptVal->setShowDropDown(true);
+            $deptVal->setErrorTitle('اختيار القسم');
+            $deptVal->setError('يرجى اختيار أحد الأقسام المعتمدة من القائمة.');
+            $deptVal->setPromptTitle('القسم');
+            $deptVal->setPrompt('اختر القسم من القائمة المنسدلة');
+            $deptVal->setFormula1("'الأقسام (Departments)'!\$A\$2:\$A\${$lastDeptRow}");
+
+            // Role Dropdown
+            $roleVal = $sheet1->getCell("E{$r}")->getDataValidation();
+            $roleVal->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+            $roleVal->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+            $roleVal->setAllowBlank(true);
+            $roleVal->setShowInputMessage(true);
+            $roleVal->setShowErrorMessage(true);
+            $roleVal->setShowDropDown(true);
+            $roleVal->setErrorTitle('اختيار الدور');
+            $roleVal->setError('يرجى اختيار أحد الأدوار المعتمدة من القائمة.');
+            $roleVal->setPromptTitle('الدور');
+            $roleVal->setPrompt('اختر الدور من القائمة المنسدلة');
+            $roleVal->setFormula1("'الأقسام (Departments)'!\$B\$2:\$B\${$lastRoleRow}");
         }
 
-        foreach (range('A', 'D') as $col) {
-            $sheet2->getColumnDimension($col)->setAutoSize(true);
+        foreach (range('A', 'E') as $col) {
+            $sheet1->getColumnDimension($col)->setAutoSize(true);
         }
+        $sheet2->getColumnDimension('A')->setAutoSize(true);
+        $sheet2->getColumnDimension('B')->setAutoSize(true);
 
-        // Set active sheet back to Sheet 1
         $spreadsheet->setActiveSheetIndex(0);
 
-        // Safe temporary file creation to avoid buffer corruption
         $tempPath = tempnam(sys_get_temp_dir(), 'almamon_template_') . '.xlsx';
         $writer = new Xlsx($spreadsheet);
         $writer->save($tempPath);
@@ -398,22 +398,22 @@ class UserController extends Controller
             $email = trim((string)($row['B'] ?? ''));
             $jobTitle = trim((string)($row['C'] ?? ''));
             $deptName = trim((string)($row['D'] ?? ''));
-            $roleRaw = strtolower(trim((string)($row['E'] ?? 'employee')));
+            $roleRaw = mb_strtolower(trim((string)($row['E'] ?? 'employee')));
 
             if (empty($name) || empty($email)) {
                 $skippedCount++;
                 continue;
             }
 
-            // Role normalization
+            // Role normalization (supports Arabic & English dropdown values)
             $role = 'employee';
-            if (in_array($roleRaw, ['admin', 'مدير', 'مدير النظام', 'المدير'])) {
+            if (str_contains($roleRaw, 'admin') || str_contains($roleRaw, 'مدير')) {
                 $role = 'admin';
-            } elseif (in_array($roleRaw, ['head', 'رئيس قسم', 'مسؤول', 'مسؤول شعبة'])) {
+            } elseif (str_contains($roleRaw, 'head') || str_contains($roleRaw, 'رئيس') || str_contains($roleRaw, 'مسؤول')) {
                 $role = 'head';
             }
 
-            // Department resolution (find or auto-create if not found)
+            // Department resolution (find matching or auto-create if not found)
             $departmentId = null;
             if (!empty($deptName)) {
                 $matchedDept = $departments->first(function ($d) use ($deptName) {
@@ -433,32 +433,12 @@ class UserController extends Controller
                 }
             }
 
-            // Attendance Mode resolution (supports both 10-col and 6-col formats)
-            $colF = trim((string)($row['F'] ?? ''));
+            // Default password, GPS mode and University location
+            $password = !empty($row['F']) && !in_array(strtolower((string)$row['F']), ['gps', 'fixed']) ? trim((string)$row['F']) : 'Mamon@2026';
             $attendanceMode = 'gps';
             $fixedLocationName = 'حرم جامعة المأمون الرئيسي';
             $fixedLatitude = 33.31524;
             $fixedLongitude = 44.36612;
-            $password = 'Mamon@2026';
-
-            if (in_array(strtolower($colF), ['fixed', 'مكتبي', 'ثابت', 'موقع ثابت'])) {
-                $attendanceMode = 'fixed';
-                $fixedLocationName = !empty($row['G']) ? trim((string)$row['G']) : 'حرم جامعة المأمون الرئيسي';
-                $fixedLatitude = !empty($row['H']) && is_numeric($row['H']) ? (float)$row['H'] : 33.31524;
-                $fixedLongitude = !empty($row['I']) && is_numeric($row['I']) ? (float)$row['I'] : 44.36612;
-                $password = !empty($row['J']) ? trim((string)$row['J']) : 'Mamon@2026';
-            } elseif (in_array(strtolower($colF), ['gps', 'ميداني', 'متحرك'])) {
-                $attendanceMode = 'gps';
-                $fixedLocationName = !empty($row['G']) ? trim((string)$row['G']) : 'حرم جامعة المأمون الرئيسي';
-                $fixedLatitude = !empty($row['H']) && is_numeric($row['H']) ? (float)$row['H'] : 33.31524;
-                $fixedLongitude = !empty($row['I']) && is_numeric($row['I']) ? (float)$row['I'] : 44.36612;
-                $password = !empty($row['J']) ? trim((string)$row['J']) : 'Mamon@2026';
-            } else {
-                // Fallback for legacy 6-column files where Col F is Password
-                if (!empty($colF)) {
-                    $password = $colF;
-                }
-            }
 
             // Check if user exists
             $existingUser = User::where('email', $email)->first();
@@ -469,10 +449,10 @@ class UserController extends Controller
                     'job_title' => $jobTitle ?: $existingUser->job_title,
                     'department_id' => $departmentId ?: $existingUser->department_id,
                     'role' => $role,
-                    'attendance_mode' => $attendanceMode,
-                    'fixed_location_name' => $fixedLocationName,
-                    'fixed_latitude' => $fixedLatitude,
-                    'fixed_longitude' => $fixedLongitude,
+                    'attendance_mode' => $existingUser->attendance_mode ?: $attendanceMode,
+                    'fixed_location_name' => $existingUser->fixed_location_name ?: $fixedLocationName,
+                    'fixed_latitude' => $existingUser->fixed_latitude ?: $fixedLatitude,
+                    'fixed_longitude' => $existingUser->fixed_longitude ?: $fixedLongitude,
                 ]);
                 $updatedCount++;
             } else {
