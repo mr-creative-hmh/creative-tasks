@@ -7,6 +7,7 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 import AccentPicker from '@/Components/AccentPicker.vue';
 import GpsLiveIndicator from '@/Components/GpsLiveIndicator.vue';
 import LocationGateModal from '@/Components/LocationGateModal.vue';
+import ToastNotifications from '@/Components/ToastNotifications.vue';
 import { initGlobalGpsTracker } from '@/Services/gpsTracker';
 import {
   LayoutDashboard,
@@ -442,16 +443,8 @@ onMounted(() => {
         <!-- Global GPS Enforcement Lock Modal -->
         <LocationGateModal />
 
-        <!-- Flash Alert Feedback Messages -->
-        <div v-if="page.props.flash?.success" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>{{ page.props.flash.success }}</span>
-        </div>
-
-        <div v-if="page.props.flash?.error" class="mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-fade-in shadow-xs">
-          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-          <span>{{ page.props.flash.error }}</span>
-        </div>
+        <!-- Global Auto-Dismiss Toast Notifications (3 Seconds) -->
+        <ToastNotifications />
 
         <slot />
 
