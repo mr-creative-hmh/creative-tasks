@@ -169,6 +169,10 @@ function openCreateModal() {
   userForm.role = 'employee';
   userForm.is_active = true;
   userForm.job_title = '';
+  userForm.attendance_mode = 'gps';
+  userForm.fixed_latitude = 33.31524;
+  userForm.fixed_longitude = 44.36612;
+  userForm.fixed_location_name = '';
   isModalOpen.value = true;
 }
 
@@ -181,6 +185,10 @@ function openEditModal(user) {
   userForm.role = user.role;
   userForm.department_id = user.department_id || '';
   userForm.is_active = !!user.is_active;
+  userForm.attendance_mode = user.attendance_mode || 'gps';
+  userForm.fixed_latitude = user.fixed_latitude || 33.31524;
+  userForm.fixed_longitude = user.fixed_longitude || 44.36612;
+  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي');
   isModalOpen.value = true;
 }
 
@@ -431,12 +439,102 @@ function submitImport() {
                   </span>
                 </td>
 
+                <!-- Attendance Mode Badge & Quick Location -->
+                <td class="px-5 py-4">
+                  <button
+                    @click="openLocationModal(u)"
+                    type="button"
+                    class="cursor-pointer group text-start"
+                    :title="t('locationSettingsTitle')"
+                  >
+                    <div
+                      v-if="u.attendance_mode === 'fixed'"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-[10px] transition-colors"
+                    >
+                      <Building2 class="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span class="truncate max-w-[130px]">
+                        {{ u.fixed_location_name || t('locationModeBadgeFixed') }}
+                      </span>
+                    </div>
+                    <div
+                      v-else
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-bold text-[10px] transition-colors"
+                    >
+                      <Navigation class="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
+                      <span>{{ t('locationModeBadgeGps') }}</span>
+                    </div>
+                  </button>
+                </td>
+
                 <!-- Department -->
                 <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
                   {{ u.department?.name || '-' }}
                 </td>
 
-                <!-- Active Status -->
+                <!-- Attendance & Location Mode Selection -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <MapPin class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>{{ t('attendanceMode') }}</span>
+              </label>
+              <span class="text-[10px] text-slate-400">تحديد كيفية توثيق الحضور</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <label
+                :class="userForm.attendance_mode === 'gps' ? 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/60 ring-2 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
+                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
+              >
+                <input type="radio" v-model="userForm.attendance_mode" value="gps" class="mt-0.5 text-sky-600" />
+                <div>
+                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <Navigation class="w-3 h-3 text-sky-600" />
+                    <span>{{ t('modeGpsLive') }}</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 mt-0.5">تتبع GPS تفاعلي</p>
+                </div>
+              </label>
+
+              <label
+                :class="userForm.attendance_mode === 'fixed' ? 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/60 ring-2 ring-purple-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
+                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
+              >
+                <input type="radio" v-model="userForm.attendance_mode" value="fixed" class="mt-0.5 text-purple-600" />
+                <div>
+                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <Building2 class="w-3 h-3 text-purple-600" />
+                    <span>{{ t('modeFixedOffice') }}</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 mt-0.5">موقع مكتبي ثابت</p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Fixed Details inside User Modal -->
+            <div v-if="userForm.attendance_mode === 'fixed'" class="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المقر / المكتب *</label>
+                <input
+                  v-model="userForm.fixed_location_name"
+                  type="text"
+                  placeholder="مثال: مكتب العمادة / القاعة 4"
+                  class="w-full h-8 px-2.5 text-[11px] rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">تحديد الموقع على الخريطة (افتراضي: جامعة المأمون)</label>
+                <LocationPickerMap
+                  v-model:lat="userForm.fixed_latitude"
+                  v-model:lng="userForm.fixed_longitude"
+                  height="170px"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Status -->
                 <td class="px-5 py-4 text-center">
                   <button
                     @click="toggleStatus(u)"
