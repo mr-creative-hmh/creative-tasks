@@ -71,6 +71,10 @@ const userForm = useForm({
   role: 'employee',
   department_id: '',
   is_active: true,
+  attendance_mode: 'gps',
+  fixed_latitude: 33.31524,
+  fixed_longitude: 44.36612,
+  fixed_location_name: 'حرم جامعة المأمون الرئيسي',
 });
 
 // Bulk Excel Import State
@@ -153,6 +157,18 @@ function submitLocationSettings() {
 }
 
 
+function toggleUserAttendanceMode(user) {
+  const newMode = user.attendance_mode === 'fixed' ? 'gps' : 'fixed';
+  router.put('/users/' + user.id + '/location-settings', {
+    attendance_mode: newMode,
+    fixed_latitude: user.fixed_latitude || 33.31524,
+    fixed_longitude: user.fixed_longitude || 44.36612,
+    fixed_location_name: user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي')
+  }, {
+    preserveScroll: true
+  });
+}
+
 function applyFilters() {
   const clean = {};
   for (const [k, v] of Object.entries(filterForm.value)) {
@@ -172,6 +188,10 @@ function openCreateModal() {
   userForm.attendance_mode = 'gps';
   userForm.fixed_latitude = 33.31524;
   userForm.fixed_longitude = 44.36612;
+  userForm.fixed_location_name = 'حرم جامعة المأمون الرئيسي';
+  userForm.attendance_mode = 'gps';
+  userForm.fixed_latitude = 33.31524;
+  userForm.fixed_longitude = 44.36612;
   userForm.fixed_location_name = '';
   isModalOpen.value = true;
 }
@@ -185,6 +205,10 @@ function openEditModal(user) {
   userForm.role = user.role;
   userForm.department_id = user.department_id || '';
   userForm.is_active = !!user.is_active;
+  userForm.attendance_mode = user.attendance_mode || 'gps';
+  userForm.fixed_latitude = user.fixed_latitude ? Number(user.fixed_latitude) : 33.31524;
+  userForm.fixed_longitude = user.fixed_longitude ? Number(user.fixed_longitude) : 44.36612;
+  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي');
   userForm.attendance_mode = user.attendance_mode || 'gps';
   userForm.fixed_latitude = user.fixed_latitude || 33.31524;
   userForm.fixed_longitude = user.fixed_longitude || 44.36612;
@@ -395,15 +419,16 @@ function submitImport() {
       <!-- Users Table Container -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-start text-xs">
-            <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
-              <tr>
-                <th class="px-5 py-4 text-start">{{ t('userName') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('email') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('role') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('department') }}</th>
-                <th class="px-5 py-4 text-center">{{ t('status') }}</th>
-                <th class="px-5 py-4 text-center">{{ t('actions') }}</th>
+          <table class="w-full text-start text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400">
+                <th class="px-5 py-3.5 text-start font-bold">{{ t('name') }}</th>
+                <th class="px-5 py-3.5 text-start font-bold">{{ t('email') }}</th>
+                <th class="px-5 py-3.5 text-start font-bold">{{ t('department') }}</th>
+                <th class="px-5 py-3.5 text-start font-bold">{{ t('role') }}</th>
+                <th class="px-5 py-3.5 text-start font-bold">حالة الـ GPS والموقع</th>
+                <th class="px-5 py-3.5 text-center font-bold">{{ t('status') }}</th>
+                <th class="px-5 py-3.5 text-center font-bold">{{ t('actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -425,6 +450,11 @@ function submitImport() {
                   {{ u.email }}
                 </td>
 
+                <!-- Department -->
+                <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
+                  {{ u.department?.name || '-' }}
+                </td>
+
                 <!-- Role Badge -->
                 <td class="px-5 py-4">
                   <span
@@ -439,102 +469,35 @@ function submitImport() {
                   </span>
                 </td>
 
-                <!-- Attendance Mode Badge & Quick Location -->
+                <!-- Clean Individual GPS / Location Status Toggle -->
                 <td class="px-5 py-4">
                   <button
-                    @click="openLocationModal(u)"
+                    @click="toggleUserAttendanceMode(u)"
                     type="button"
-                    class="cursor-pointer group text-start"
-                    :title="t('locationSettingsTitle')"
+                    class="cursor-pointer group text-start inline-flex items-center gap-1.5"
+                    :title="'انقر للتبديل السريع بين GPS والموقع الثابت لهذا المستخدم'"
                   >
                     <div
-                      v-if="u.attendance_mode === 'fixed'"
-                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-[10px] transition-colors"
+                      v-if="u.attendance_mode === 'gps' || !u.attendance_mode"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-bold text-[10px] transition-all shadow-xs"
+                    >
+                      <Navigation class="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <span>GPS نشط (ميداني)</span>
+                    </div>
+
+                    <div
+                      v-else
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-[10px] transition-all shadow-xs"
                     >
                       <Building2 class="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />
                       <span class="truncate max-w-[130px]">
-                        {{ u.fixed_location_name || t('locationModeBadgeFixed') }}
+                        {{ u.fixed_location_name || 'حرم جامعة المأمون' }}
                       </span>
-                    </div>
-                    <div
-                      v-else
-                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-bold text-[10px] transition-colors"
-                    >
-                      <Navigation class="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
-                      <span>{{ t('locationModeBadgeGps') }}</span>
                     </div>
                   </button>
                 </td>
 
-                <!-- Department -->
-                <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                  {{ u.department?.name || '-' }}
-                </td>
-
-                <!-- Attendance & Location Mode Selection -->
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <MapPin class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>{{ t('attendanceMode') }}</span>
-              </label>
-              <span class="text-[10px] text-slate-400">تحديد كيفية توثيق الحضور</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <label
-                :class="userForm.attendance_mode === 'gps' ? 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/60 ring-2 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
-                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
-              >
-                <input type="radio" v-model="userForm.attendance_mode" value="gps" class="mt-0.5 text-sky-600" />
-                <div>
-                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                    <Navigation class="w-3 h-3 text-sky-600" />
-                    <span>{{ t('modeGpsLive') }}</span>
-                  </div>
-                  <p class="text-[9px] text-slate-400 mt-0.5">تتبع GPS تفاعلي</p>
-                </div>
-              </label>
-
-              <label
-                :class="userForm.attendance_mode === 'fixed' ? 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/60 ring-2 ring-purple-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
-                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
-              >
-                <input type="radio" v-model="userForm.attendance_mode" value="fixed" class="mt-0.5 text-purple-600" />
-                <div>
-                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                    <Building2 class="w-3 h-3 text-purple-600" />
-                    <span>{{ t('modeFixedOffice') }}</span>
-                  </div>
-                  <p class="text-[9px] text-slate-400 mt-0.5">موقع مكتبي ثابت</p>
-                </div>
-              </label>
-            </div>
-
-            <!-- Fixed Details inside User Modal -->
-            <div v-if="userForm.attendance_mode === 'fixed'" class="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المقر / المكتب *</label>
-                <input
-                  v-model="userForm.fixed_location_name"
-                  type="text"
-                  placeholder="مثال: مكتب العمادة / القاعة 4"
-                  class="w-full h-8 px-2.5 text-[11px] rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none"
-                />
-              </div>
-
-              <div>
-                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">تحديد الموقع على الخريطة (افتراضي: جامعة المأمون)</label>
-                <LocationPickerMap
-                  v-model:lat="userForm.fixed_latitude"
-                  v-model:lng="userForm.fixed_longitude"
-                  height="170px"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Active Status -->
+                <!-- Active Status -->
                 <td class="px-5 py-4 text-center">
                   <button
                     @click="toggleStatus(u)"
@@ -555,7 +518,7 @@ function submitImport() {
                     <button
                       @click="openEditModal(u)"
                       type="button"
-                      class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-accent-light dark:hover:bg-accent-light/30 text-accent cursor-pointer transition-colors"
                       :title="t('edit')"
                     >
                       <Edit2 class="w-4 h-4" />
@@ -594,7 +557,7 @@ function submitImport() {
               </tr>
 
               <tr v-if="users.data.length === 0">
-                <td colspan="6" class="py-12 text-center text-slate-400">
+                <td colspan="7" class="py-12 text-center text-slate-400">
                   {{ t('noTasksFound') }}
                 </td>
               </tr>
@@ -613,95 +576,105 @@ function submitImport() {
     </div>
 
     <!-- Create / Edit User Modal -->
-    <div v-if="isModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="isModalOpen = false">
-      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 shadow-2xl relative" @click.stop>
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-          <h3 class="text-sm font-bold text-slate-900 dark:text-white">
-            {{ editingUser ? t('edit') : t('addUser') }}
-          </h3>
+    <div v-if="isModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto" @click="isModalOpen = false">
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-5 sm:p-6 shadow-2xl relative my-6" @click.stop>
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center shadow-xs">
+              <UserPlus v-if="!editingUser" class="w-4 h-4" />
+              <Edit2 v-else class="w-4 h-4" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                {{ editingUser ? t('editUser') : t('addUser') }}
+              </h3>
+              <p class="text-[10px] text-slate-400">
+                {{ editingUser ? editingUser.name + ' (' + editingUser.email + ')' : 'إضافة مستخدم جديد للنظام مع ضبط إعدادات وموقع الحضور' }}
+              </p>
+            </div>
+          </div>
           <button @click="isModalOpen = false" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer">
             <X class="w-4 h-4" />
           </button>
         </div>
 
         <form @submit.prevent="submitUser" class="space-y-3.5 text-xs">
-          <!-- Name -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userName') }} *</label>
-            <input
-              v-model="userForm.name"
-              type="text"
-              required
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
-            />
+          <!-- Name & Job Title -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userName') }} *</label>
+              <input
+                v-model="userForm.name"
+                type="text"
+                required
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('jobTitle') }}</label>
+              <input
+                v-model="userForm.job_title"
+                type="text"
+                :placeholder="t('jobTitlePlaceholder')"
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
+              />
+            </div>
           </div>
 
-          <!-- Job Title -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('jobTitle') }}</label>
-            <input
-              v-model="userForm.job_title"
-              type="text"
-              :placeholder="t('jobTitlePlaceholder')"
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
-            />
+          <!-- Email & Password -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('email') }} *</label>
+              <input
+                v-model="userForm.email"
+                type="email"
+                required
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
+              />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                {{ t('password') }} {{ editingUser ? `(${t('optionalPasswordHint')})` : '*' }}
+              </label>
+              <input
+                v-model="userForm.password"
+                type="password"
+                :required="!editingUser"
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
+              />
+            </div>
           </div>
 
-          <!-- Email -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('email') }} *</label>
-            <input
-              v-model="userForm.email"
-              type="email"
-              required
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
-            />
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              {{ t('password') }} {{ editingUser ? `(${t('optionalPasswordHint')})` : '*' }}
-            </label>
-            <input
-              v-model="userForm.password"
-              type="password"
-              :required="!editingUser"
-              placeholder="••••••••"
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
-            />
-          </div>
-
-          <!-- Role -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userRole') }} *</label>
-            <select
-              v-model="userForm.role"
-              required
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
-            >
-              <option value="employee">{{ t('employeeRole') }}</option>
-              <option value="head">{{ t('headRole') }}</option>
-              <option value="admin">{{ t('adminRole') }}</option>
-            </select>
-          </div>
-
-          <!-- Department -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userDepartment') }}</label>
-            <select
-              v-model="userForm.department_id"
-              class="w-full h-10 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
-            >
-              <option value="">{{ t('selectDept') }}</option>
-              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                {{ dept.name }}
-              </option>
-            </select>
+          <!-- Role & Department -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userRole') }} *</label>
+              <select
+                v-model="userForm.role"
+                required
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
+              >
+                <option value="employee">{{ t('employeeRole') }}</option>
+                <option value="head">{{ t('headRole') }}</option>
+                <option value="admin">{{ t('adminRole') }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">{{ t('userDepartment') }}</label>
+              <select
+                v-model="userForm.department_id"
+                class="w-full h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 outline-none focus:border-sky-500 font-medium"
+              >
+                <option value="">{{ t('selectDept') }}</option>
+                <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                  {{ dept.name }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <!-- Active Toggle -->
-          <div class="flex items-center gap-2 pt-1">
+          <div class="flex items-center gap-2 pt-0.5">
             <input
               v-model="userForm.is_active"
               type="checkbox"
@@ -713,21 +686,126 @@ function submitImport() {
             </label>
           </div>
 
+          <!-- Attendance & Location Mode Section (Per-User) -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <MapPin class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>إعدادات ونمط الموقع الجغرافي لهذا المستخدم</span>
+              </label>
+              <span class="text-[10px] text-slate-400">اختر نمط الحضور</span>
+            </div>
+
+            <!-- Radio Options -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <label
+                :class="userForm.attendance_mode === 'gps' ? 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/60 ring-2 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
+                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
+              >
+                <input type="radio" v-model="userForm.attendance_mode" value="gps" class="mt-0.5 text-sky-600" />
+                <div>
+                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <Navigation class="w-3 h-3 text-sky-600" />
+                    <span>تتبع GPS ميداني</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 mt-0.5">تتبع GPS نشط عبر جهاز الموظف</p>
+                </div>
+              </label>
+
+              <label
+                :class="userForm.attendance_mode === 'fixed' ? 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/60 ring-2 ring-purple-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'"
+                class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
+              >
+                <input type="radio" v-model="userForm.attendance_mode" value="fixed" class="mt-0.5 text-purple-600" />
+                <div>
+                  <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <Building2 class="w-3 h-3 text-purple-600" />
+                    <span>موقع ثابت (جامعة المأمون)</span>
+                  </div>
+                  <p class="text-[9px] text-slate-400 mt-0.5">تسجيل تلقائي بدون إلزام GPS</p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Fixed Location Details & Interactive Map -->
+            <div v-if="userForm.attendance_mode === 'fixed'" class="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المقر / المكتب *</label>
+                <input
+                  v-model="userForm.fixed_location_name"
+                  type="text"
+                  placeholder="مثال: حرم جامعة المأمون الرئيسي / مكتب العمادة"
+                  class="w-full h-8 px-2.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <!-- Quick Presets -->
+              <div>
+                <label class="block text-[9px] font-bold uppercase text-slate-400 mb-1">مواقع سريعة داخل الجامعة</label>
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="preset in campusPresets"
+                    :key="preset.name"
+                    @click="applyFormPreset(preset)"
+                    type="button"
+                    class="px-2 py-0.5 rounded-lg text-[10px] font-medium bg-white dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-950 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                  >
+                    {{ preset.name }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Leaflet Map Picker -->
+              <div>
+                <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  تحديد الموقع على الخريطة (افتراضي: حرم جامعة المأمون الرئيسي)
+                </label>
+                <LocationPickerMap
+                  v-model:lat="userForm.fixed_latitude"
+                  v-model:lng="userForm.fixed_longitude"
+                  height="190px"
+                />
+              </div>
+
+              <!-- Coordinates Inputs -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[9px] font-bold text-slate-400 mb-0.5">خط العرض (Lat)</label>
+                  <input
+                    v-model="userForm.fixed_latitude"
+                    type="number"
+                    step="any"
+                    class="w-full h-7 px-2 text-[11px] font-mono rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[9px] font-bold text-slate-400 mb-0.5">خط الطول (Lng)</label>
+                  <input
+                    v-model="userForm.fixed_longitude"
+                    type="number"
+                    step="any"
+                    class="w-full h-7 px-2 text-[11px] font-mono rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Actions -->
-          <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               @click="isModalOpen = false"
               type="button"
-              class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              class="h-9 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs"
             >
               {{ t('cancel') }}
             </button>
             <button
               :disabled="userForm.processing"
               type="submit"
-              class="h-10 px-5 rounded-xl bg-accent bg-accent-hover text-white font-bold shadow-accent active:scale-95 disabled:opacity-50 cursor-pointer transition-all flex items-center justify-center"
+              class="h-9 px-5 rounded-xl bg-accent bg-accent-hover active:scale-95 text-white font-bold text-xs shadow-accent transition-all cursor-pointer disabled:opacity-50"
             >
-              {{ userForm.processing ? t('saving') : t('save') }}
+              {{ editingUser ? t('saveChanges') : t('addUser') }}
             </button>
           </div>
         </form>
