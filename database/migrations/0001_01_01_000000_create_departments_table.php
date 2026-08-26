@@ -11,9 +11,8 @@ return new class extends Migration
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('manager_id')->nullable();
             $table->time('work_start_time')->default('08:00:00');
-            $table->time('work_end_time')->default('16:00:00');
+            $table->time('work_end_time')->default('15:30:00');
             $table->timestamps();
         });
     }

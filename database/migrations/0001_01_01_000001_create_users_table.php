@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -17,8 +14,20 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', ['admin', 'head', 'employee'])->default('employee');
+            $table->string('job_title')->nullable();
+            $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
+            $table->boolean('is_active')->default(true);
+            $table->enum('attendance_mode', ['gps', 'fixed'])->default('gps');
+            $table->string('fixed_location_name')->nullable()->default('المقر الرئيسي للشركة');
+            $table->decimal('fixed_latitude', 10, 8)->nullable()->default(33.31524000);
+            $table->decimal('fixed_longitude', 11, 8)->nullable()->default(44.36612000);
             $table->rememberToken();
             $table->timestamps();
+        });
+
+        Schema::table('departments', function (Blueprint $table) {
+            $table->foreignId('manager_id')->nullable()->after('work_end_time')->constrained('users')->nullOnDelete();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -37,11 +46,12 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::table('departments', function (Blueprint $table) {
+            $table->dropForeign(['manager_id']);
+            $table->dropColumn('manager_id');
+        });
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');

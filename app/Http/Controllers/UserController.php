@@ -221,7 +221,7 @@ class UserController extends Controller
         $sheet1->setRightToLeft(true);
 
         // Header Title & Instructions
-        $sheet1->setCellValue('A1', 'جامعة المأمون - نموذج استيراد الكوادر والمستخدمين');
+        $sheet1->setCellValue('A1', 'Creative Tasks - نموذج استيراد الكوادر وفريق العمل');
         $sheet1->mergeCells('A1:E1');
         $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0284C7'));
         $sheet1->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -253,9 +253,9 @@ class UserController extends Controller
 
         // Sample rows
         $samples = [
-            ['د. محمد الراوي', 'm.alrawi@almamonuc.edu.iq', 'عميد الكلية', 'عمادة الكلية', 'رئيس قسم (head)'],
-            ['أ. هيثم الجبوري', 'h.aljuboori@almamonuc.edu.iq', 'مقرر قسم الحاسوب', 'قسم هندسة تقنيات الحاسوب', 'رئيس قسم (head)'],
-            ['م. حيدر البغدادي', 'h.albaghdadi@almamonuc.edu.iq', 'مهندس برمجيات ونظم', 'قسم هندسة تقنيات الحاسوب', 'موظف (employee)'],
+            ['طارق عبد الرحيم', 'ceo@creativetasks.io', 'عميد الكلية', 'الإدارة التنفيذية والعامة', 'رئيس قسم (head)'],
+            ['م. زياد كمال', 'ops.lead@creativetasks.io', 'مقرر قسم الحاسوب', 'قسم تطوير البرمجيات والتقنية', 'رئيس قسم (head)'],
+            ['ياسر منير', 'dev.lead@creativetasks.io', 'مهندس برمجيات ونظم', 'قسم تطوير البرمجيات والتقنية', 'موظف (employee)'],
         ];
 
         $row = 5;
@@ -284,7 +284,7 @@ class UserController extends Controller
 
         $departments = Department::orderBy('name')->pluck('name')->toArray();
         if (empty($departments)) {
-            $departments = ['عمادة الكلية', 'قسم هندسة تقنيات الحاسوب', 'قسم الصيدلة', 'الشؤون الإدارية والمالية'];
+            $departments = ['الإدارة التنفيذية والعامة', 'قسم تطوير البرمجيات والتقنية', 'قسم الصيدلة', 'الشؤون الإدارية والمالية'];
         }
 
         foreach ($departments as $idx => $deptName) {
@@ -347,7 +347,7 @@ class UserController extends Controller
             ob_end_clean();
         }
 
-        return response()->download($tempPath, 'almamon_users_template.xlsx', [
+        return response()->download($tempPath, 'creative_tasks_users_template.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
@@ -436,7 +436,7 @@ class UserController extends Controller
             // Default password, GPS mode and University location
             $password = !empty($row['F']) && !in_array(strtolower((string)$row['F']), ['gps', 'fixed']) ? trim((string)$row['F']) : 'Mamon@2026';
             $attendanceMode = 'gps';
-            $fixedLocationName = 'حرم جامعة المأمون الرئيسي';
+            $fixedLocationName = 'المقر الرئيسي للشركة';
             $fixedLatitude = 33.31524;
             $fixedLongitude = 44.36612;
 

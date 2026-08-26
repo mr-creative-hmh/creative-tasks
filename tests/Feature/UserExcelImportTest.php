@@ -17,7 +17,7 @@ class UserExcelImportTest extends TestCase
     public function test_admin_can_download_user_import_template(): void
     {
         $admin = User::factory()->create([
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'role' => 'admin',
         ]);
 
@@ -30,12 +30,12 @@ class UserExcelImportTest extends TestCase
     public function test_admin_can_bulk_import_users_from_excel(): void
     {
         $admin = User::factory()->create([
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'role' => 'admin',
         ]);
 
         $dept = Department::create([
-            'name' => 'قسم علوم الحاسوب',
+            'name' => 'قسم تطوير البرمجيات والتقنية',
             'work_start_time' => '08:00:00',
             'work_end_time' => '15:30:00',
         ]);
@@ -50,15 +50,15 @@ class UserExcelImportTest extends TestCase
         $sheet->setCellValue('E4', 'الدور والصلاحية');
 
         $sheet->setCellValue('A5', 'أحمد محمود');
-        $sheet->setCellValue('B5', 'ahmed.m@almamonuc.edu.iq');
-        $sheet->setCellValue('C5', 'مقرر قسم');
-        $sheet->setCellValue('D5', 'قسم علوم الحاسوب');
+        $sheet->setCellValue('B5', 'ahmed.m@creativetasks.io');
+        $sheet->setCellValue('C5', 'مطور برمجيات أول');
+        $sheet->setCellValue('D5', 'قسم تطوير البرمجيات والتقنية');
         $sheet->setCellValue('E5', 'head');
 
         $sheet->setCellValue('A6', 'مريم جاسم');
-        $sheet->setCellValue('B6', 'maryam.j@almamonuc.edu.iq');
-        $sheet->setCellValue('C6', 'مهندسة برمجيات');
-        $sheet->setCellValue('D6', 'كلية جديدة');
+        $sheet->setCellValue('B6', 'maryam.j@creativetasks.io');
+        $sheet->setCellValue('C6', 'مهندسة واجهات');
+        $sheet->setCellValue('D6', 'قسم العمليات الميدانية');
         $sheet->setCellValue('E6', 'employee');
 
         $tempPath = tempnam(sys_get_temp_dir(), 'test_excel_') . '.xlsx';
@@ -75,24 +75,24 @@ class UserExcelImportTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('users', [
-            'email' => 'ahmed.m@almamonuc.edu.iq',
+            'email' => 'ahmed.m@creativetasks.io',
             'name' => 'أحمد محمود',
-            'job_title' => 'مقرر قسم',
+            'job_title' => 'مطور برمجيات أول',
             'role' => 'head',
             'department_id' => $dept->id,
             'attendance_mode' => 'gps',
         ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'maryam.j@almamonuc.edu.iq',
+            'email' => 'maryam.j@creativetasks.io',
             'name' => 'مريم جاسم',
-            'job_title' => 'مهندسة برمجيات',
+            'job_title' => 'مهندسة واجهات',
             'role' => 'employee',
             'attendance_mode' => 'gps',
         ]);
 
         $this->assertDatabaseHas('departments', [
-            'name' => 'كلية جديدة',
+            'name' => 'قسم العمليات الميدانية',
         ]);
 
         if (file_exists($tempPath)) {
