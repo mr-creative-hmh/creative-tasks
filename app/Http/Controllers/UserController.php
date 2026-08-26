@@ -211,39 +211,43 @@ class UserController extends Controller
         return back()->with('success', $msg);
     }
 
-    public function downloadTemplate(): StreamedResponse
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $spreadsheet = new Spreadsheet();
         
         // --- Sheet 1: Main Template ---
         $sheet1 = $spreadsheet->getActiveSheet();
-        $sheet1->setTitle('بيانات الكوادر (Staff)');
+        $sheet1->setTitle('الكوادر (Staff)');
         $sheet1->setRightToLeft(true);
 
-        $sheet1->setCellValue('A1', 'نموذج استيراد بيانات الكوادر والتدريسيين - جامعة المأمون');
-        $sheet1->mergeCells('A1:F1');
+        $sheet1->setCellValue('A1', 'جامعة المأمون - نموذج استيراد الكوادر والمستخدمين');
+        $sheet1->mergeCells('A1:J1');
         $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0284C7'));
         $sheet1->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $sheet1->setCellValue('A2', 'ملاحظة: يرجى كتابة اسم القسم تماماً كما هو مسجل في ورقة (الأقسام المعتمدة). الحقول المطلوبة: الاسم، البريد، الصلاحية.');
-        $sheet1->mergeCells('A2:F2');
+        $sheet1->setCellValue('A2', 'ملاحظة: املأ البيانات ابتداءً من الصف 5. نمط الحضور الافتراضي: gps أو fixed. الموقع الافتراضي: حرم جامعة المأمون.');
+        $sheet1->mergeCells('A2:J2');
         $sheet1->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet1->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $headers = [
-            'A4' => 'الاسم الرباعي واللقب * (Full Name)',
-            'B4' => 'البريد الإلكتروني الجامعي * (Email)',
-            'C4' => 'المسمى الوظيفي / الرتبة (Job Title)',
-            'D4' => 'اسم القسم أو الكلية (Department Name)',
-            'E4' => 'الصلاحية * (Role: admin, head, employee)',
-            'F4' => 'كلمة المرور الابتدائية (Default Password)',
+            'A4' => 'الاسم الكامل * (Full Name)',
+            'B4' => 'البريد الإلكتروني * (Email)',
+            'C4' => 'المسمى الوظيفي (Job Title)',
+            'D4' => 'اسم القسم (Department Name)',
+            'E4' => 'الدور * (Role: admin, head, employee)',
+            'F4' => 'نمط الحضور (gps / fixed)',
+            'G4' => 'اسم المقر الثابت (Location Name)',
+            'H4' => 'خط العرض (Latitude)',
+            'I4' => 'خط الطول (Longitude)',
+            'J4' => 'كلمة المرور (Password)',
         ];
 
         foreach ($headers as $cell => $text) {
             $sheet1->setCellValue($cell, $text);
         }
 
-        $sheet1->getStyle('A4:F4')->applyFromArray([
+        $sheet1->getStyle('A4:J4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF0369A1']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -252,9 +256,9 @@ class UserController extends Controller
         $sheet1->getRowDimension(4)->setRowHeight(28);
 
         $samples = [
-            ['د. علي حسين مكي', 'ali.maki@almamonuc.edu.iq', 'أستاذ دكتور', 'قسم علوم الحاسوب', 'head', 'Mamon@2026'],
-            ['م. مريم صادق كريم', 'maryam.s@almamonuc.edu.iq', 'مدرس مساعد', 'قسم هندسة تقنيات الحاسوب', 'employee', 'Mamon@2026'],
-            ['حيدر كاظم عبيد', 'haider.k@almamonuc.edu.iq', 'مهندس برمجيات', 'قسم شؤون الطلبة والتسجيل', 'employee', 'Mamon@2026'],
+            ['د. محمد الراوي', 'm.alrawi@almamonuc.edu.iq', 'عميد الكلية', 'عمادة الكلية', 'head', 'fixed', 'حرم جامعة المأمون الرئيسي', 33.31524, 44.36612, 'Mamon@2026'],
+            ['أ. هيثم الجبوري', 'h.aljuboori@almamonuc.edu.iq', 'رئيس قسم الحاسوب', 'قسم هندسة تقنيات الحاسوب', 'head', 'fixed', 'مبنى كلية الهندسة', 33.31570, 44.36620, 'Mamon@2026'],
+            ['م. حيدر البغدادي', 'h.albaghdadi@almamonuc.edu.iq', 'مهندس برمجيات ومتابعة ميدانية', 'قسم هندسة تقنيات الحاسوب', 'employee', 'gps', 'حرم جامعة المأمون الرئيسي', 33.31524, 44.36612, 'Mamon@2026'],
         ];
 
         $row = 5;
@@ -265,8 +269,12 @@ class UserController extends Controller
             $sheet1->setCellValue("D{$row}", $sample[3]);
             $sheet1->setCellValue("E{$row}", $sample[4]);
             $sheet1->setCellValue("F{$row}", $sample[5]);
+            $sheet1->setCellValue("G{$row}", $sample[6]);
+            $sheet1->setCellValue("H{$row}", $sample[7]);
+            $sheet1->setCellValue("I{$row}", $sample[8]);
+            $sheet1->setCellValue("J{$row}", $sample[9]);
 
-            $sheet1->getStyle("A{$row}:F{$row}")->applyFromArray([
+            $sheet1->getStyle("A{$row}:J{$row}")->applyFromArray([
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE2E8F0']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
@@ -274,25 +282,25 @@ class UserController extends Controller
             $row++;
         }
 
-        foreach (range('A', 'F') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet1->getColumnDimension($col)->setAutoSize(true);
         }
 
         // --- Sheet 2: Reference of Existing Departments ---
         $sheet2 = $spreadsheet->createSheet();
-        $sheet2->setTitle('الأقسام المعتمدة (Departments)');
+        $sheet2->setTitle('الأقسام (Departments)');
         $sheet2->setRightToLeft(true);
 
-        $sheet2->setCellValue('A1', 'قائمة الأقسام والكليات المسجلة حالياً في النظام (للاسترشاد بها في عمود اسم القسم)');
+        $sheet2->setCellValue('A1', 'دليل وأسماء الأقسام المعتمدة في النظام');
         $sheet2->mergeCells('A1:D1');
         $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(12)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0D9488'));
         $sheet2->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $deptHeaders = [
             'A3' => '# (ID)',
-            'B3' => 'اسم القسم / الكلية (Department Name)',
-            'C3' => 'رئيس القسم الحالي (Current Manager)',
-            'D3' => 'أوقات الدوام الرسمي (Working Shift)',
+            'B3' => 'اسم القسم / الشعبة (Department Name)',
+            'C3' => 'رئيس القسم (Current Manager)',
+            'D3' => 'الدوام الرسمي (Working Shift)',
         ];
 
         foreach ($deptHeaders as $cell => $text) {
@@ -312,7 +320,7 @@ class UserController extends Controller
         foreach ($departments as $d) {
             $sheet2->setCellValue("A{$dRow}", $d->id);
             $sheet2->setCellValue("B{$dRow}", $d->name);
-            $sheet2->setCellValue("C{$dRow}", $d->manager?->name ?? 'غير معين');
+            $sheet2->setCellValue("C{$dRow}", $d->manager?->name ?? 'غير محدد');
             $sheet2->setCellValue("D{$dRow}", substr($d->work_start_time, 0, 5) . ' - ' . substr($d->work_end_time, 0, 5));
 
             $sheet2->getStyle("A{$dRow}:D{$dRow}")->applyFromArray([
@@ -330,13 +338,21 @@ class UserController extends Controller
         // Set active sheet back to Sheet 1
         $spreadsheet->setActiveSheetIndex(0);
 
-        return response()->streamDownload(function () use ($spreadsheet) {
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-        }, 'almamon_users_template.xlsx', [
+        // Safe temporary file creation to avoid buffer corruption
+        $tempPath = tempnam(sys_get_temp_dir(), 'almamon_template_') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        return response()->download($tempPath, 'almamon_users_template.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Cache-Control' => 'max-age=0',
-        ]);
+            'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ])->deleteFileAfterSend(true);
     }
 
     public function importExcel(Request $request): RedirectResponse
@@ -352,11 +368,11 @@ class UserController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
         } catch (\Exception $e) {
-            return back()->with('error', 'فشل في قراءة ملف الإكسل: ' . $e->getMessage());
+            return back()->with('error', 'تعذر قراءة ملف الإكسل: ' . $e->getMessage());
         }
 
         if (empty($rows) || count($rows) < 4) {
-            return back()->with('error', 'الملف المرفوع فارغ أو لا يحتوي على بنية البيانات المطلوبة.');
+            return back()->with('error', 'ملف الإكسل فارغ أو لا يحتوي على صفوف بيانات.');
         }
 
         $headerRowIndex = 4;
@@ -378,29 +394,32 @@ class UserController extends Controller
             $row = $rows[$i] ?? [];
             if (empty($row)) continue;
 
-            $name = trim($row['A'] ?? '');
-            $email = trim($row['B'] ?? '');
-            $jobTitle = trim($row['C'] ?? '');
-            $deptName = trim($row['D'] ?? '');
-            $roleInput = strtolower(trim($row['E'] ?? ''));
-            $password = trim($row['F'] ?? '');
+            $name = trim((string)($row['A'] ?? ''));
+            $email = trim((string)($row['B'] ?? ''));
+            $jobTitle = trim((string)($row['C'] ?? ''));
+            $deptName = trim((string)($row['D'] ?? ''));
+            $roleRaw = strtolower(trim((string)($row['E'] ?? 'employee')));
 
-            if (empty($name) && empty($email)) {
-                continue;
-            }
-
-            if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if (empty($name) || empty($email)) {
                 $skippedCount++;
                 continue;
             }
 
+            // Role normalization
+            $role = 'employee';
+            if (in_array($roleRaw, ['admin', 'مدير', 'مدير النظام', 'المدير'])) {
+                $role = 'admin';
+            } elseif (in_array($roleRaw, ['head', 'رئيس قسم', 'مسؤول', 'مسؤول شعبة'])) {
+                $role = 'head';
+            }
+
+            // Department resolution (find or auto-create if not found)
             $departmentId = null;
             if (!empty($deptName)) {
                 $matchedDept = $departments->first(function ($d) use ($deptName) {
-                    return mb_strtolower(trim($d->name)) === mb_strtolower($deptName)
-                        || str_contains(mb_strtolower($d->name), mb_strtolower($deptName));
+                    return str_contains(mb_strtolower($d->name), mb_strtolower($deptName)) ||
+                           str_contains(mb_strtolower($deptName), mb_strtolower($d->name));
                 });
-
                 if ($matchedDept) {
                     $departmentId = $matchedDept->id;
                 } else {
@@ -414,49 +433,67 @@ class UserController extends Controller
                 }
             }
 
-            $role = 'employee';
-            if (str_contains($roleInput, 'head') || str_contains($roleInput, 'رئيس') || str_contains($roleInput, 'قسم')) {
-                $role = 'head';
-            } elseif (str_contains($roleInput, 'admin') || str_contains($roleInput, 'مدير') || str_contains($roleInput, 'عام') || str_contains($roleInput, 'مسؤول')) {
-                $role = 'admin';
+            // Attendance Mode resolution (supports both 10-col and 6-col formats)
+            $colF = trim((string)($row['F'] ?? ''));
+            $attendanceMode = 'gps';
+            $fixedLocationName = 'حرم جامعة المأمون الرئيسي';
+            $fixedLatitude = 33.31524;
+            $fixedLongitude = 44.36612;
+            $password = 'Mamon@2026';
+
+            if (in_array(strtolower($colF), ['fixed', 'مكتبي', 'ثابت', 'موقع ثابت'])) {
+                $attendanceMode = 'fixed';
+                $fixedLocationName = !empty($row['G']) ? trim((string)$row['G']) : 'حرم جامعة المأمون الرئيسي';
+                $fixedLatitude = !empty($row['H']) && is_numeric($row['H']) ? (float)$row['H'] : 33.31524;
+                $fixedLongitude = !empty($row['I']) && is_numeric($row['I']) ? (float)$row['I'] : 44.36612;
+                $password = !empty($row['J']) ? trim((string)$row['J']) : 'Mamon@2026';
+            } elseif (in_array(strtolower($colF), ['gps', 'ميداني', 'متحرك'])) {
+                $attendanceMode = 'gps';
+                $fixedLocationName = !empty($row['G']) ? trim((string)$row['G']) : 'حرم جامعة المأمون الرئيسي';
+                $fixedLatitude = !empty($row['H']) && is_numeric($row['H']) ? (float)$row['H'] : 33.31524;
+                $fixedLongitude = !empty($row['I']) && is_numeric($row['I']) ? (float)$row['I'] : 44.36612;
+                $password = !empty($row['J']) ? trim((string)$row['J']) : 'Mamon@2026';
+            } else {
+                // Fallback for legacy 6-column files where Col F is Password
+                if (!empty($colF)) {
+                    $password = $colF;
+                }
             }
 
-            $user = User::where('email', $email)->first();
+            // Check if user exists
+            $existingUser = User::where('email', $email)->first();
 
-            if ($user) {
-                $updateData = [
+            if ($existingUser) {
+                $existingUser->update([
                     'name' => $name,
-                    'job_title' => $jobTitle ?: $user->job_title,
-                    'department_id' => $departmentId ?: $user->department_id,
+                    'job_title' => $jobTitle ?: $existingUser->job_title,
+                    'department_id' => $departmentId ?: $existingUser->department_id,
                     'role' => $role,
-                ];
-
-                if (!empty($password)) {
-                    $updateData['password'] = Hash::make($password);
-                }
-
-                $user->update($updateData);
+                    'attendance_mode' => $attendanceMode,
+                    'fixed_location_name' => $fixedLocationName,
+                    'fixed_latitude' => $fixedLatitude,
+                    'fixed_longitude' => $fixedLongitude,
+                ]);
                 $updatedCount++;
             } else {
                 User::create([
                     'name' => $name,
                     'email' => $email,
-                    'job_title' => $jobTitle ?: null,
+                    'password' => Hash::make($password),
+                    'job_title' => $jobTitle,
                     'department_id' => $departmentId,
                     'role' => $role,
-                    'password' => Hash::make(!empty($password) ? $password : 'password'),
                     'is_active' => true,
-                    'attendance_mode' => 'gps',
+                    'attendance_mode' => $attendanceMode,
+                    'fixed_location_name' => $fixedLocationName,
+                    'fixed_latitude' => $fixedLatitude,
+                    'fixed_longitude' => $fixedLongitude,
                 ]);
                 $createdCount++;
             }
         }
 
-        $feedbackMsg = "تمت معالجة الملف بنجاح! تم إنشاء {$createdCount} كادر جديد، وتحديث {$updatedCount} حساب.";
-        if ($skippedCount > 0) {
-            $feedbackMsg .= " (تم تخطي {$skippedCount} سجل غير صالح).";
-        }
-
-        return back()->with('success', $feedbackMsg);
+        $message = "تمت معالجة ملف الإكسل بنجاح: إضافة {$createdCount} مستخدم جديد، تحديث {$updatedCount} مستخدم، وتخطي {$skippedCount} صفوف فارغة.";
+        return back()->with('success', $message);
     }
 }
