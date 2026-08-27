@@ -253,7 +253,7 @@ class UserController extends Controller
 
         // Sample rows
         $samples = [
-            ['طارق عبد الرحيم', 'ceo@creativetasks.io', 'عميد الكلية', 'الإدارة التنفيذية والعامة', 'رئيس قسم (head)'],
+            ['طارق عبد الرحيم', 'ceo@creativetasks.io', 'المدير التنفيذي', 'الإدارة التنفيذية والعامة', 'رئيس قسم (head)'],
             ['م. زياد كمال', 'ops.lead@creativetasks.io', 'مقرر قسم الحاسوب', 'قسم تطوير البرمجيات والتقنية', 'رئيس قسم (head)'],
             ['ياسر منير', 'dev.lead@creativetasks.io', 'مهندس برمجيات ونظم', 'قسم تطوير البرمجيات والتقنية', 'موظف (employee)'],
         ];
@@ -339,7 +339,7 @@ class UserController extends Controller
 
         $spreadsheet->setActiveSheetIndex(0);
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'almamon_template_') . '.xlsx';
+        $tempPath = tempnam(sys_get_temp_dir(), 'creative_tasks_template_') . '.xlsx';
         $writer = new Xlsx($spreadsheet);
         $writer->save($tempPath);
 

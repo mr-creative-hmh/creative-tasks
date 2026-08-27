@@ -207,14 +207,14 @@ class ReportController extends Controller
         $sheet->setRightToLeft(true);
 
         // Header Title
-        $sheet->setCellValue('A1', 'جامعة المأمون - تقرير الأداء ومتابعة إنجاز المهام المؤسسية');
+        $sheet->setCellValue('A1', 'Creative Tasks Enterprise - تقرير الأداء ومتابعة إنجاز المهام المؤسسية');
         $sheet->mergeCells('A1:J1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF0369A1'));
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Meta info
         $deptName = $user->role === 'head' ? ($user->department?->name ?? 'القسم') : 'كافة الأقسام';
-        $sheet->setCellValue('A2', "الفترة: من {$dateFrom} إلى {$dateTo} | الكلية/القسم: {$deptName} | تاريخ السحب: " . date('Y-m-d H:i') . " | المشرف: {$user->name}");
+        $sheet->setCellValue('A2', "الفترة: من {$dateFrom} إلى {$dateTo} | القسم/الإدارة: {$deptName} | تاريخ السحب: " . date('Y-m-d H:i') . " | المشرف: {$user->name}");
         $sheet->mergeCells('A2:J2');
         $sheet->getStyle('A2')->getFont()->setSize(10)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF64748B'));
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -225,7 +225,7 @@ class ReportController extends Controller
             'B4' => 'عنوان المهمة / التكليف',
             'C4' => 'الموظف المكلف',
             'D4' => 'البريد الإلكتروني',
-            'E4' => 'الكلية / القسم',
+            'E4' => 'القسم / الإدارة',
             'F4' => 'نوع المهمة',
             'G4' => 'نسبة الإنجاز',
             'H4' => 'حالة المهمة',
@@ -302,7 +302,7 @@ class ReportController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $filename = "almamon-tasks-report-" . date('Y-m-d') . ".xlsx";
+        $filename = "creative-tasks-report-" . date('Y-m-d') . ".xlsx";
 
         return new StreamedResponse(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);

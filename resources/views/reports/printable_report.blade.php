@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جامعة المأمون - تقرير الأداء ومتابعة المهام المعتمد</title>
+    <title>Creative Tasks Enterprise - تقرير الأداء ومتابعة المهام المعتمد</title>
     
     <!-- Google Fonts for Ultra-Crisp Arabic Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -254,7 +254,7 @@
     <!-- SCREEN TOP BAR -->
     <div class="action-bar">
         <div style="font-weight: 700; font-size: 14px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-            <span>📄 معاينة التقرير الرسمي لجامعة المأمون</span>
+            <span>📄 معاينة التقرير الرسمي لمنظومة Creative Tasks</span>
         </div>
         <div style="display: flex; gap: 10px;">
             <button onclick="window.print()" class="btn btn-primary">
@@ -273,7 +273,7 @@
         <div class="header">
             <div>
                 <div style="font-size: 11px; font-weight: 700; color: #475569;">جمهورية العراق • وزارة التعليم العالي والبحث العلمي</div>
-                <h1 class="header-title">جامعة المأمون (Al-Ma'moon University)</h1>
+                <h1 class="header-title">Creative Tasks Enterprise</h1>
                 <div class="header-sub">شعبة المتابعة والتنسيق الإداري والميداني • بغداد، العراق</div>
             </div>
             <div class="header-meta">
@@ -287,7 +287,7 @@
         <!-- 2. METADATA STRIP -->
         <div class="meta-strip">
             <div><strong>الفترة الزمنية:</strong> {{ $dateFrom }} إلى {{ $dateTo }}</div>
-            <div><strong>الكلية / القسم:</strong> {{ $department ? $department->name : 'كافة الكليات والأقسام' }}</div>
+            <div><strong>القسم / الإدارة:</strong> {{ $department ? $department->name : 'كافة الأقسام والإدارات' }}</div>
             <div><strong>الموظف المكلف:</strong> {{ $employee ? $employee->name : 'كافة الكوادر' }}</div>
         </div>
 
@@ -323,7 +323,7 @@
         <table class="report-table">
             <thead>
                 <tr>
-                    <th style="width: 40%;">الكلية / القسم</th>
+                    <th style="width: 40%;">القسم / الإدارة</th>
                     <th style="width: 20%; text-align: center;">إجمالي المهام</th>
                     <th style="width: 20%; text-align: center;">المهام المنجزة</th>
                     <th style="width: 20%; text-align: center;">نسبة الإنجاز المؤسسي</th>
@@ -352,7 +352,7 @@
                     <th style="width: 4%;">#</th>
                     <th style="width: 32%;">عنوان المهمة / التوجيه الإداري</th>
                     <th style="width: 16%;">الموظف المكلف</th>
-                    <th style="width: 16%;">الكلية / القسم</th>
+                    <th style="width: 16%;">القسم / الإدارة</th>
                     <th style="width: 10%; text-align: center;">النوع</th>
                     <th style="width: 10%; text-align: center;">الإنجاز</th>
                     <th style="width: 12%; text-align: center;">الحالة</th>
@@ -406,7 +406,7 @@
                 <div class="sig-line"></div>
             </div>
             <div class="sig-box">
-                <div style="font-weight: 800; font-size: 12px; color: #334155;">ختم الكلية الرسمي</div>
+                <div style="font-weight: 800; font-size: 12px; color: #334155;">الختم الإداري الرسمي</div>
                 <div style="width: 75px; height: 75px; border: 1.5px dashed #94a3b8; border-radius: 50%; margin: 8px auto 0 auto; line-height: 75px; font-size: 9px; color: #cbd5e1;">ختم الاعتماد</div>
             </div>
             <div class="sig-box">
@@ -418,7 +418,7 @@
 
         <!-- 7. FOOTER -->
         <div class="footer">
-            وثيقة إدارية رسمية صادرة آلياً عن منظومة جامعة المأمون الإلكترونية • بغداد، جمهورية العراق • جميع الحقوق محفوظة © {{ date('Y') }}
+            وثيقة إدارية رسمية صادرة آلياً عن منظومة Creative Tasks الإلكترونية • جميع الحقوق محفوظة © {{ date('Y') }}
         </div>
 
     </div>

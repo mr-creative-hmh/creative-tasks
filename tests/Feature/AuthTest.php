@@ -26,13 +26,13 @@ class AuthTest extends TestCase
     public function test_admin_can_authenticate_and_redirects_to_dashboard(): void
     {
         $user = User::factory()->create([
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'role' => 'admin',
             'is_active' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'password' => 'password',
         ]);
 
@@ -43,13 +43,13 @@ class AuthTest extends TestCase
     public function test_employee_can_authenticate_and_redirects_to_employee_portal(): void
     {
         $user = User::factory()->create([
-            'email' => 'staff@almamonuc.edu.iq',
+            'email' => 'staff@creativetasks.io',
             'role' => 'employee',
             'is_active' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'staff@almamonuc.edu.iq',
+            'email' => 'staff@creativetasks.io',
             'password' => 'password',
         ]);
 
@@ -60,12 +60,12 @@ class AuthTest extends TestCase
     public function test_user_cannot_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create([
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'is_active' => true,
         ]);
 
         $this->post('/login', [
-            'email' => 'admin@almamonuc.edu.iq',
+            'email' => 'admin@creativetasks.io',
             'password' => 'wrong-password',
         ]);
 

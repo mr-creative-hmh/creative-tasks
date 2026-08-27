@@ -29,7 +29,7 @@ class UserAndProfileTest extends TestCase
 
         $response = $this->actingAs($admin)->from('/users')->post('/users', [
             'name' => 'د. حسام علي',
-            'email' => 'hussam@almamonuc.edu.iq',
+            'email' => 'hussam@creativetasks.io',
             'password' => 'secret123',
             'role' => 'head',
             'department_id' => $dept->id,
@@ -38,7 +38,7 @@ class UserAndProfileTest extends TestCase
 
         $response->assertRedirect('/users');
         $this->assertDatabaseHas('users', [
-            'email' => 'hussam@almamonuc.edu.iq',
+            'email' => 'hussam@creativetasks.io',
             'role' => 'head',
         ]);
     }
@@ -67,35 +67,35 @@ class UserAndProfileTest extends TestCase
 
     public function test_admin_can_update_profile_info(): void
     {
-        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Old Admin', 'email' => 'admin.old@almamonuc.edu.iq']);
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Old Admin', 'email' => 'admin.old@creativetasks.io']);
 
         $response = $this->actingAs($admin)->from('/profile')->patch('/profile', [
             'name' => 'New Admin Name',
-            'email' => 'admin.new@almamonuc.edu.iq',
+            'email' => 'admin.new@creativetasks.io',
         ]);
 
         $response->assertRedirect('/profile');
         $this->assertDatabaseHas('users', [
             'id' => $admin->id,
             'name' => 'New Admin Name',
-            'email' => 'admin.new@almamonuc.edu.iq',
+            'email' => 'admin.new@creativetasks.io',
         ]);
     }
 
     public function test_employee_cannot_update_profile_info(): void
     {
-        $employee = User::factory()->create(['role' => 'employee', 'name' => 'Original Employee', 'email' => 'emp@almamonuc.edu.iq']);
+        $employee = User::factory()->create(['role' => 'employee', 'name' => 'Original Employee', 'email' => 'emp@creativetasks.io']);
 
         $response = $this->actingAs($employee)->from('/profile')->patch('/profile', [
             'name' => 'Hacked Employee Name',
-            'email' => 'hacked@almamonuc.edu.iq',
+            'email' => 'hacked@creativetasks.io',
         ]);
 
         $response->assertRedirect('/profile');
         $this->assertDatabaseHas('users', [
             'id' => $employee->id,
             'name' => 'Original Employee',
-            'email' => 'emp@almamonuc.edu.iq',
+            'email' => 'emp@creativetasks.io',
         ]);
     }
 

@@ -74,7 +74,7 @@ const userForm = useForm({
   attendance_mode: 'gps',
   fixed_latitude: 33.31524,
   fixed_longitude: 44.36612,
-  fixed_location_name: 'حرم جامعة المأمون الرئيسي',
+  fixed_location_name: 'المقر الرئيسي للمؤسسة',
 });
 
 // Bulk Excel Import State
@@ -106,12 +106,12 @@ const locationForm = useForm({
   fixed_location_name: '',
 });
 
-const campusPresets = [
-  { name: 'حرم جامعة المأمون الرئيسي (السنتر)', lat: 33.31524, lng: 44.36612 },
-  { name: 'مبنى الرئاسة والعمادة', lat: 33.31550, lng: 44.36580 },
+const corporatePresets = [
+  { name: 'المقر الرئيسي للمؤسسة (المركز)', lat: 33.31524, lng: 44.36612 },
+  { name: 'مبنى الإدارة العامة والمكاتب التنفيذية', lat: 33.31550, lng: 44.36580 },
   { name: 'مجمع القاعات والمختبرات المركزية', lat: 33.31480, lng: 44.36650 },
-  { name: 'كلية الصيدلة والمختبرات الطبية', lat: 33.31510, lng: 44.36680 },
-  { name: 'كلية تقنيات الهندسة والحاسوب', lat: 33.31570, lng: 44.36620 },
+  { name: 'مركز تكنولوجيا المعلومات والبرمجيات', lat: 33.31510, lng: 44.36680 },
+  { name: 'مركز العمليات والمشاريع الميدانية', lat: 33.31570, lng: 44.36620 },
 ];
 
 function openLocationModal(user) {
@@ -119,7 +119,7 @@ function openLocationModal(user) {
   locationForm.attendance_mode = user.attendance_mode || 'gps';
   locationForm.fixed_latitude = user.fixed_latitude || 33.31524;
   locationForm.fixed_longitude = user.fixed_longitude || 44.36612;
-  locationForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'مقر الحرم الجامعي');
+  locationForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'المقر الرئيسي للمؤسسة');
   isLocationModalOpen.value = true;
 }
 
@@ -163,7 +163,7 @@ function toggleUserAttendanceMode(user) {
     attendance_mode: newMode,
     fixed_latitude: user.fixed_latitude || 33.31524,
     fixed_longitude: user.fixed_longitude || 44.36612,
-    fixed_location_name: user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي')
+    fixed_location_name: user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'المقر الرئيسي للمؤسسة')
   }, {
     preserveScroll: true
   });
@@ -188,7 +188,7 @@ function openCreateModal() {
   userForm.attendance_mode = 'gps';
   userForm.fixed_latitude = 33.31524;
   userForm.fixed_longitude = 44.36612;
-  userForm.fixed_location_name = 'حرم جامعة المأمون الرئيسي';
+  userForm.fixed_location_name = 'المقر الرئيسي للمؤسسة';
   userForm.attendance_mode = 'gps';
   userForm.fixed_latitude = 33.31524;
   userForm.fixed_longitude = 44.36612;
@@ -208,11 +208,11 @@ function openEditModal(user) {
   userForm.attendance_mode = user.attendance_mode || 'gps';
   userForm.fixed_latitude = user.fixed_latitude ? Number(user.fixed_latitude) : 33.31524;
   userForm.fixed_longitude = user.fixed_longitude ? Number(user.fixed_longitude) : 44.36612;
-  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي');
+  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'المقر الرئيسي للمؤسسة');
   userForm.attendance_mode = user.attendance_mode || 'gps';
   userForm.fixed_latitude = user.fixed_latitude || 33.31524;
   userForm.fixed_longitude = user.fixed_longitude || 44.36612;
-  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'حرم جامعة المأمون الرئيسي');
+  userForm.fixed_location_name = user.fixed_location_name || (user.department?.name ? 'مقر ' + user.department.name : 'المقر الرئيسي للمؤسسة');
   isModalOpen.value = true;
 }
 
@@ -491,7 +491,7 @@ function submitImport() {
                     >
                       <Building2 class="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />
                       <span class="truncate max-w-[130px]">
-                        {{ u.fixed_location_name || 'حرم جامعة المأمون' }}
+                        {{ u.fixed_location_name || 'المقر الرئيسي للمؤسسة' }}
                       </span>
                     </div>
                   </button>
@@ -720,7 +720,7 @@ function submitImport() {
                 <div>
                   <div class="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1">
                     <Building2 class="w-3 h-3 text-purple-600" />
-                    <span>موقع ثابت (جامعة المأمون)</span>
+                    <span>موقع عمل ثابت (المقر/الفرع)</span>
                   </div>
                   <p class="text-[9px] text-slate-400 mt-0.5">تسجيل تلقائي بدون إلزام GPS</p>
                 </div>
@@ -734,17 +734,17 @@ function submitImport() {
                 <input
                   v-model="userForm.fixed_location_name"
                   type="text"
-                  placeholder="مثال: حرم جامعة المأمون الرئيسي / مكتب العمادة"
+                  placeholder="مثال: المقر الرئيسي للمؤسسة / المكتب التنفيذي"
                   class="w-full h-8 px-2.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
               <!-- Quick Presets -->
               <div>
-                <label class="block text-[9px] font-bold uppercase text-slate-400 mb-1">مواقع سريعة داخل الجامعة</label>
+                <label class="block text-[9px] font-bold uppercase text-slate-400 mb-1">مواقع سريعة معتمدة داخل المؤسسة</label>
                 <div class="flex flex-wrap gap-1">
                   <button
-                    v-for="preset in campusPresets"
+                    v-for="preset in corporatePresets"
                     :key="preset.name"
                     @click="applyFormPreset(preset)"
                     type="button"
@@ -758,7 +758,7 @@ function submitImport() {
               <!-- Leaflet Map Picker -->
               <div>
                 <label class="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  تحديد الموقع على الخريطة (افتراضي: حرم جامعة المأمون الرئيسي)
+                  تحديد الموقع على الخريطة (افتراضي: المقر الرئيسي للمؤسسة)
                 </label>
                 <LocationPickerMap
                   v-model:lat="userForm.fixed_latitude"
@@ -1114,19 +1114,19 @@ function submitImport() {
             <input
               v-model="locationForm.fixed_location_name"
               type="text"
-              placeholder="مثال: مكتب العمادة / مختبر الحاسوب 2 / مبنى الصيدلة"
+              placeholder="مثال: المقر الرئيسي / مكتب الإدارة / مبنى العمليات"
               class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-900 dark:text-white focus:border-purple-500 font-medium"
             />
           </div>
 
-          <!-- Quick Campus Presets Chips -->
+          <!-- Quick Corporate Presets Chips -->
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-400 mb-2">
               {{ t('quickPresets') }}
             </label>
             <div class="flex flex-wrap gap-1.5">
               <button
-                v-for="preset in campusPresets"
+                v-for="preset in corporatePresets"
                 :key="preset.name"
                 @click="applyLocationPreset(preset)"
                 type="button"

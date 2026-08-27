@@ -2,7 +2,7 @@
 <html dir="rtl" lang="ar">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>جامعة المأمون - تقرير الأداء الإداري والميداني المعتمد</title>
+    <title>Creative Tasks Enterprise - تقرير الأداء الإداري والميداني المعتمد</title>
     <style>
         @page {
             margin: 15mm 12mm 15mm 12mm;
@@ -204,7 +204,7 @@
             <tr>
                 <td style="width: 60%; vertical-align: top;">
                     <div style="font-size: 10px; font-weight: bold; color: #475569;">جمهورية العراق • وزارة التعليم العالي والبحث العلمي</div>
-                    <div class="inst-title">جامعة المأمون (Al-Ma'moon University)</div>
+                    <div class="inst-title">Creative Tasks Enterprise</div>
                     <div class="inst-subtitle">شعبة المتابعة والتنسيق الإداري والميداني • بغداد - العراق</div>
                     <div class="report-badge">تقرير الأداء الدوري ومتابعة إنجاز المهام المؤسسية</div>
                 </td>
@@ -223,7 +223,7 @@
         <table class="meta-table">
             <tr>
                 <td style="width: 35%;"><strong>الفترة الزمنية المحددة:</strong> {{ $dateFrom }} إلى {{ $dateTo }}</td>
-                <td style="width: 35%;"><strong>الكلية / القسم:</strong> {{ $department ? $department->name : 'كافة الكليات والأقسام' }}</td>
+                <td style="width: 35%;"><strong>القسم / الإدارة:</strong> {{ $department ? $department->name : 'كافة الأقسام والإدارات' }}</td>
                 <td style="width: 30%;"><strong>الموظف المكلف:</strong> {{ $employee ? $employee->name : 'كافة الكوادر' }}</td>
             </tr>
         </table>
@@ -271,7 +271,7 @@
     <table class="report-table">
         <thead>
             <tr>
-                <th style="width: 40%;">الكلية / القسم</th>
+                <th style="width: 40%;">القسم / الإدارة</th>
                 <th style="width: 20%; text-align: center;">إجمالي المهام</th>
                 <th style="width: 20%; text-align: center;">المهام المكتملة</th>
                 <th style="width: 20%; text-align: center;">معدل الإنجاز</th>
@@ -298,7 +298,7 @@
                 <th style="width: 4%;">#</th>
                 <th style="width: 28%;">عنوان المهمة / التوجيه الإداري</th>
                 <th style="width: 16%;">الموظف المكلف</th>
-                <th style="width: 16%;">الكلية / القسم</th>
+                <th style="width: 16%;">القسم / الإدارة</th>
                 <th style="width: 10%; text-align: center;">النوع</th>
                 <th style="width: 10%; text-align: center;">الإنجاز</th>
                 <th style="width: 8%; text-align: center;">الحالة</th>
@@ -357,7 +357,7 @@
                 <div class="signature-line"></div>
             </td>
             <td style="width: 34%;" class="signature-box">
-                <div style="font-weight: bold; font-size: 10px; color: #334155;">ختم الكلية الرسمي</div>
+                <div style="font-weight: bold; font-size: 10px; color: #334155;">الختم الإداري الرسمي</div>
                 <div style="width: 70px; height: 70px; border: 1.5px dashed #94a3b8; border-radius: 50%; margin: 6px auto 0 auto; line-height: 70px; font-size: 8px; color: #cbd5e1;">ختم الاعتماد</div>
             </td>
             <td style="width: 33%;" class="signature-box">
@@ -370,7 +370,7 @@
 
     <!-- 7. FOOTER -->
     <div class="report-footer">
-        وثيقة إدارية رسمية صادرة آلياً عن منظومة جامعة المأمون الإلكترونية • بغداد، جمهورية العراق • جميع الحقوق محفوظة © {{ date('Y') }}
+        وثيقة إدارية رسمية صادرة آلياً عن منظومة Creative Tasks الإلكترونية • جميع الحقوق محفوظة © {{ date('Y') }}
     </div>
 
 </body>

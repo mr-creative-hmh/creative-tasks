@@ -18,14 +18,14 @@ class DepartmentAndReportTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $response = $this->actingAs($admin)->from('/departments')->post('/departments', [
-            'name' => 'كلية طب الأسنان',
+            'name' => 'قسم تكنولوجيا المعلومات والبرمجيات',
             'work_start_time' => '08:30',
             'work_end_time' => '15:30',
         ]);
 
         $response->assertRedirect('/departments');
         $this->assertDatabaseHas('departments', [
-            'name' => 'كلية طب الأسنان',
+            'name' => 'قسم تكنولوجيا المعلومات والبرمجيات',
         ]);
     }
 
@@ -54,7 +54,7 @@ class DepartmentAndReportTest extends TestCase
         $response = $this->actingAs($admin)->get('/reports/pdf?date_from=2026-01-01&date_to=2026-12-31');
 
         $response->assertStatus(200);
-        $response->assertSee('جامعة المأمون');
+        $response->assertSee('Creative Tasks');
     }
 
     public function test_admin_can_export_native_xlsx_excel_report(): void

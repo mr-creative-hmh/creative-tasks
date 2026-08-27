@@ -6,7 +6,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { currentLocale, setLocale, t } from './i18n';
 
-const appName = import.meta.env.VITE_APP_NAME || 'جامعة المأمون';
+const appName = import.meta.env.VITE_APP_NAME || 'Creative Tasks';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
