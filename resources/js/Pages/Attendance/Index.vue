@@ -95,7 +95,7 @@ const trailError = ref('');
 
 // Haversine distance calculator between multiple points in km
 const trailTotalDistanceKm = computed(() => {
-  if (!trailPoints.value || trailPoints.value.length < 2) return '0.00';
+  if (!trailPoints.value || trailPoints.value.length < 2) return '0.00 ' + t('meters');
   let totalMeters = 0;
   for (let i = 0; i < trailPoints.value.length - 1; i++) {
     const p1 = trailPoints.value[i];
@@ -191,7 +191,6 @@ async function viewEmployeeTrail(user) {
     if (res.data && res.data.points && res.data.points.length > 0) {
       trailPoints.value = res.data.points;
     } else {
-      // If no intermediate points, use current log coordinates as a single point
       const currentLog = props.logs.data.find(l => l.user_id === user.id);
       if (currentLog && currentLog.latitude && currentLog.longitude) {
         trailPoints.value = [{
@@ -270,30 +269,32 @@ onUnmounted(() => {
         :subtitle="t('attendanceSubtitle')"
       >
         <template #actions>
-          <div class="flex items-center gap-2 flex-wrap">
-            <!-- Live Radar Sync Button -->
+          <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <!-- Live Radar Sync Button (Adaptive Light/Dark styling) -->
             <button
               @click="triggerLiveRadarSync"
               :disabled="isRadarScanning"
               type="button"
-              class="h-10 px-4 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+              class="h-10 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 font-bold text-xs shadow-xs active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
               :title="t('liveRadar')"
             >
-              <Radio class="w-4 h-4" :class="{ 'animate-pulse text-emerald-300': isRadarScanning }" />
+              <Radio class="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" :class="{ 'animate-pulse text-emerald-500': isRadarScanning }" />
               <span>{{ isRadarScanning ? t('liveRadarScanning') : t('liveRadar') }}</span>
-              <span v-if="liveActiveCount > 0" class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-[10px] font-black">
+              <span v-if="liveActiveCount > 0" class="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black shadow-xs">
                 {{ liveActiveCount }}
               </span>
             </button>
 
-            <!-- Auto Refresh Toggle -->
+            <!-- Auto Refresh Toggle (Adaptive Light/Dark styling) -->
             <button
               @click="toggleAutoRefresh"
               type="button"
-              :class="autoRefreshEnabled ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white/10 text-white/80 hover:bg-white/20'"
-              class="h-10 px-3.5 rounded-2xl font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              :class="autoRefreshEnabled 
+                ? 'bg-emerald-600 text-white shadow-emerald-600/30' 
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'"
+              class="h-10 px-3.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
             >
-              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': autoRefreshEnabled }" />
+              <RefreshCw class="w-3.5 h-3.5 shrink-0" :class="{ 'animate-spin': autoRefreshEnabled }" />
               <span>{{ t('autoRefresh') }}</span>
             </button>
 
@@ -302,9 +303,9 @@ onUnmounted(() => {
               v-if="canManualEdit"
               @click="showManualPanel = !showManualPanel"
               type="button"
-              class="h-10 px-4 rounded-2xl bg-white text-sky-900 font-bold text-xs shadow-lg hover:shadow-xl hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              class="h-10 px-4 rounded-2xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Edit3 class="w-4 h-4 text-sky-600" />
+              <Edit3 class="w-4 h-4" />
               <span>{{ showManualPanel ? t('hideManualAdjustment') : t('manualLocationPin') }}</span>
             </button>
           </div>
@@ -318,7 +319,7 @@ onUnmounted(() => {
             <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statTotalEmployees') }}</p>
             <h3 class="text-2xl font-black text-slate-900 dark:text-white">{{ stats.total_employees }}</h3>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
             <Users class="w-6 h-6" />
           </div>
         </div>
@@ -328,7 +329,7 @@ onUnmounted(() => {
             <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statPresentToday') }}</p>
             <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ stats.total_present_today }}</h3>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <CheckCircle2 class="w-6 h-6" />
           </div>
         </div>
@@ -338,7 +339,7 @@ onUnmounted(() => {
             <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statAbsentToday') }}</p>
             <h3 class="text-2xl font-black text-rose-600 dark:text-rose-400">{{ Math.max(0, stats.total_employees - stats.total_present_today) }}</h3>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
             <AlertCircle class="w-6 h-6" />
           </div>
         </div>
@@ -386,28 +387,28 @@ onUnmounted(() => {
       <!-- MAP VIEW & INTERACTIVE TRAIL VIEWER                       -->
       <!-- ========================================================= -->
       <div class="relative space-y-3">
-        <!-- Trail Floating Information Banner (Shown when an employee's trail is active) -->
+        <!-- Trail Floating Information Banner (Adaptive Dark/Light Contrast) -->
         <div
           v-if="selectedTrailEmployee"
-          class="p-4 rounded-3xl bg-gradient-to-r from-sky-600 via-sky-700 to-teal-600 text-white shadow-xl flex items-center justify-between flex-wrap gap-4 animate-fade-in"
+          class="p-4 sm:p-5 rounded-3xl bg-slate-900 dark:bg-slate-800 text-white border border-slate-700 shadow-2xl flex items-center justify-between flex-wrap gap-4 animate-fade-in"
         >
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black">
-              <Route class="w-5 h-5 text-white" />
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-400/30 flex items-center justify-center font-black shrink-0">
+              <Route class="w-6 h-6" />
             </div>
             <div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-sky-200">{{ t('trailTitle') }}:</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-bold text-slate-400">{{ t('trailTitle') }}:</span>
                 <span class="font-black text-sm text-white">{{ selectedTrailEmployee.name }}</span>
-                <span v-if="selectedTrailEmployee.department" class="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">
+                <span v-if="selectedTrailEmployee.department" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-bold">
                   {{ selectedTrailEmployee.department }}
                 </span>
               </div>
-              <div class="flex items-center gap-4 text-xs text-sky-100 mt-1 font-medium flex-wrap">
+              <div class="flex items-center gap-4 text-xs text-slate-300 mt-1 font-medium flex-wrap">
                 <span>📍 {{ t('trailPointsCount') }}: <strong class="font-mono font-bold text-white">{{ trailPoints.length }}</strong></span>
-                <span>🛣️ {{ t('approxDistance') }}: <strong class="font-mono font-bold text-white">{{ trailTotalDistanceKm }}</strong></span>
-                <span v-if="trailPoints.length > 0">⏱️ {{ t('startPoint') }}: <strong class="font-mono font-bold text-white">{{ trailPoints[0].time }}</strong></span>
-                <span v-if="trailPoints.length > 1">🏁 {{ t('currentPoint') }}: <strong class="font-mono font-bold text-white">{{ trailPoints[trailPoints.length - 1].time }}</strong></span>
+                <span>🛣️ {{ t('approxDistance') }}: <strong class="font-mono font-bold text-emerald-400">{{ trailTotalDistanceKm }}</strong></span>
+                <span v-if="trailPoints.length > 0">⏱️ {{ t('startPoint') }}: <strong class="font-mono font-bold text-sky-400">{{ trailPoints[0].time }}</strong></span>
+                <span v-if="trailPoints.length > 1">🏁 {{ t('currentPoint') }}: <strong class="font-mono font-bold text-teal-400">{{ trailPoints[trailPoints.length - 1].time }}</strong></span>
               </div>
             </div>
           </div>
@@ -415,7 +416,7 @@ onUnmounted(() => {
           <button
             @click="closeTrailView"
             type="button"
-            class="h-9 px-4 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            class="h-9 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <X class="w-3.5 h-3.5" />
             <span>{{ t('hideTrail') }}</span>
@@ -514,7 +515,7 @@ onUnmounted(() => {
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
               <UserCheck class="w-5 h-5" />
             </div>
             <div>
@@ -529,7 +530,7 @@ onUnmounted(() => {
 
         <div class="overflow-x-auto">
           <table class="w-full text-start text-xs">
-            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-800">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
               <tr>
                 <th class="px-5 py-3.5 text-start">{{ t('employee') }}</th>
                 <th class="px-5 py-3.5 text-start">{{ t('department') }}</th>
@@ -570,7 +571,7 @@ onUnmounted(() => {
                 </td>
 
                 <!-- Coordinates -->
-                <td class="px-5 py-3.5 font-mono text-[11px] text-slate-500">
+                <td class="px-5 py-3.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                   <span v-if="log.latitude && log.longitude" class="flex items-center gap-1">
                     <MapPin class="w-3.5 h-3.5 text-sky-500 shrink-0" />
                     <span>{{ Number(log.latitude).toFixed(5) }}, {{ Number(log.longitude).toFixed(5) }}</span>
@@ -579,7 +580,7 @@ onUnmounted(() => {
                 </td>
 
                 <!-- Notes / Status -->
-                <td class="px-5 py-3.5 text-slate-500 text-[11px]">
+                <td class="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-[11px]">
                   {{ log.notes || '—' }}
                 </td>
 
@@ -588,7 +589,7 @@ onUnmounted(() => {
                   <button
                     @click="viewEmployeeTrail(log.user)"
                     type="button"
-                    class="h-8 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-[11px] transition-all flex items-center gap-1.5 ms-auto cursor-pointer active:scale-95 shadow-2xs"
+                    class="h-8 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 font-bold text-[11px] transition-all flex items-center gap-1.5 ms-auto cursor-pointer active:scale-95 shadow-2xs"
                     :title="t('viewTrail')"
                   >
                     <Route class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
@@ -598,7 +599,7 @@ onUnmounted(() => {
               </tr>
 
               <tr v-if="logs.data.length === 0">
-                <td colspan="6" class="px-5 py-12 text-center text-slate-400 text-xs">
+                <td colspan="6" class="px-5 py-12 text-center text-slate-400 text-xs font-bold">
                   {{ t('noRecordsFound') }}
                 </td>
               </tr>
