@@ -22,7 +22,20 @@ touch /var/www/html/database/database.sqlite || true
 
 # Set proper ownership and permissions
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/public/build || true
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/public/build || true
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/public/build || true
+
+# Ensure APP_KEY exists so Laravel never crashes with 500
+if [ -z "$APP_KEY" ]; then
+    echo "[Railway] Warning: APP_KEY environment variable was not found. Generating a temporary APP_KEY..."
+    php artisan key:generate --force || true
+fi
+
+# Set LOG_CHANNEL to stderr so any error prints directly to Railway Deploy Logs
+export LOG_CHANNEL=stderr
+
+# Configure PHP-FPM to log all worker errors to stdout/stderr
+sed -i "s/;catch_workers_output = yes/catch_workers_output = yes/g" /usr/local/etc/php-fpm.d/www.conf || true
+sed -i "s/;decorate_workers_output = no/decorate_workers_output = no/g" /usr/local/etc/php-fpm.d/www.conf || true
 
 # Laravel Startup & Migrations
 echo "[Railway] Preparing Laravel optimizations and migrations..."
