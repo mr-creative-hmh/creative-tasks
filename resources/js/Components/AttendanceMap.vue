@@ -64,8 +64,9 @@ function initMap() {
   }).setView([defaultLat, defaultLng], 15);
 
   // Modern Clean CartoDB Voyager Tile Layer
-  leafletInstance.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  leafletInstance.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
+    subdomains: ['a', 'b', 'c'],
   }).addTo(map);
 
   // Layer groups

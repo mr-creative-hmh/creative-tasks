@@ -69,9 +69,9 @@ function initMap() {
   });
 
   // High performance clean tile layer
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    subdomains: 'abcd'
+    subdomains: ['a', 'b', 'c']
   }).addTo(map);
 
   // University Campus Geofence Boundary Guide
