@@ -280,7 +280,7 @@
                 <div>رقم التقرير: <strong>REP-{{ date('Ymd') }}-{{ rand(100, 999) }}</strong></div>
                 <div>تاريخ السحب: <strong>{{ $generatedAt }}</strong></div>
                 <div>المشرف المسؤول: <strong>{{ $generatedBy }}</strong></div>
-                <div style="color: #0369a1; font-weight: bold;">almamonuc.edu.iq</div>
+                <div style="color: #0369a1; font-weight: bold;">creativetasks.io</div>
             </div>
         </div>
 

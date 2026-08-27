@@ -212,7 +212,7 @@
                     <div style="font-size: 9px; color: #64748b;">رقم التقرير: <strong>REP-{{ date('Ymd') }}-{{ rand(100,999) }}</strong></div>
                     <div style="font-size: 9px; color: #64748b;">تاريخ الإصدار: <strong>{{ $generatedAt }}</strong></div>
                     <div style="font-size: 9px; color: #64748b;">المشرف المسؤول: <strong>{{ $generatedBy }}</strong></div>
-                    <div style="font-size: 8px; color: #94a3b8; margin-top: 3px;">الموقع الرسمي: almamonuc.edu.iq</div>
+                    <div style="font-size: 8px; color: #94a3b8; margin-top: 3px;">الموقع الرسمي: creativetasks.io</div>
                 </td>
             </tr>
         </table>

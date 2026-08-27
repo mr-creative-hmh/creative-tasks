@@ -31,7 +31,7 @@ let map = null;
 let marker = null;
 let geofenceCircle = null;
 
-// Baghdad Al-Ma'moon University Campus coordinates
+// Baghdad Corporate Headquarters coordinates
 const defaultCampusLat = 33.31524;
 const defaultCampusLng = 44.36612;
 
@@ -74,7 +74,7 @@ function initMap() {
     subdomains: ['a', 'b', 'c']
   }).addTo(map);
 
-  // University Campus Geofence Boundary Guide
+  // Corporate Geofence Perimeter Guide
   geofenceCircle = L.circle([defaultCampusLat, defaultCampusLng], {
     color: '#0284c7',
     fillColor: '#38bdf8',
@@ -165,7 +165,7 @@ defineExpose({
     <!-- Mini overlay badge indicating campus center -->
     <div class="absolute bottom-2 start-2 z-[400] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shadow-xs pointer-events-none">
       <MapPin class="w-3 h-3 text-sky-600 dark:text-sky-400" />
-      <span>حرم جامعة المأمون الرئيسي (افتراضي)</span>
+      <span>المقر الرئيسي للمؤسسة (افتراضي)</span>
     </div>
   </div>
 </template>
