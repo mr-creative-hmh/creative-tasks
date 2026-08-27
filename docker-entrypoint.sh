@@ -24,10 +24,11 @@ touch /var/www/html/database/database.sqlite || true
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/public/build || true
 chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/public/build || true
 
-# Ensure APP_KEY exists so Laravel never crashes with 500
-if [ -z "$APP_KEY" ]; then
-    echo "[Railway] Warning: APP_KEY environment variable was not found. Generating a temporary APP_KEY..."
-    php artisan key:generate --force || true
+# Ensure APP_KEY exists and has valid base64 format (starts with base64:)
+if [ -z "$APP_KEY" ] || [ "${APP_KEY#base64:}" = "$APP_KEY" ]; then
+    echo "[Railway] Generating valid base64 APP_KEY for encryption..."
+    export APP_KEY=$(php artisan key:generate --show)
+    echo "[Railway] Using generated APP_KEY: $APP_KEY"
 fi
 
 # Set LOG_CHANNEL to stderr so any error prints directly to Railway Deploy Logs
