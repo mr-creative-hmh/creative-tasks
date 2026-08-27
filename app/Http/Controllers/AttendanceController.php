@@ -82,15 +82,27 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+        public function store(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'accuracy' => ['nullable', 'numeric'],
-        ]);
+        // If user is in fixed location mode configured by Admin, use the Admin-assigned coordinates
+        if ($user->attendance_mode === 'fixed' && !empty($user->fixed_latitude) && !empty($user->fixed_longitude)) {
+            $latitude = $user->fixed_latitude;
+            $longitude = $user->fixed_longitude;
+            $notes = 'حضور موقع ثابت معتمد (' . ($user->fixed_location_name ?: 'المقر المعتمد') . ')';
+        } else {
+            // Strictly require live GPS coordinates
+            $validated = $request->validate([
+                'latitude' => ['required', 'numeric', 'between:-90,90'],
+                'longitude' => ['required', 'numeric', 'between:-180,180'],
+                'accuracy' => ['nullable', 'numeric'],
+            ]);
+            $latitude = $validated['latitude'];
+            $longitude = $validated['longitude'];
+            $accuracyText = isset($validated['accuracy']) ? ' (دقة: ±' . round($validated['accuracy']) . 'م)' : '';
+            $notes = 'حضور GPS حي ومباشر' . $accuracyText;
+        }
 
         $log = AttendanceLog::updateOrCreate(
             [
@@ -98,16 +110,16 @@ class AttendanceController extends Controller
                 'log_date' => Carbon::today()->toDateString(),
             ],
             [
-                'latitude' => $validated['latitude'],
-                'longitude' => $validated['longitude'],
+                'latitude' => $latitude,
+                'longitude' => $longitude,
                 'log_time' => Carbon::now()->toTimeString(),
-                'notes' => 'تتبع حضور ميداني ذكي (GPS Live Auto-Sync)',
+                'notes' => $notes,
             ]
         );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم توثيق الحضور وتحديث الموقع الميداني بنجاح',
+            'message' => 'تم تسجيل وتحديث الحضور بنجاح',
             'log' => $log,
         ]);
     }
