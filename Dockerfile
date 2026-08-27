@@ -18,6 +18,8 @@ RUN npm run build
 # Stage 2: Production PHP 8.3 FPM + Nginx Runtime
 FROM php:8.3-fpm-bookworm
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 WORKDIR /var/www/html
 
 # Install Nginx and required OS packages
@@ -29,14 +31,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg     && docker-php-ex
 # Copy Composer binary from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy composer files for caching
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies without dev packages
-RUN composer install     --no-dev     --prefer-dist     --optimize-autoloader     --no-interaction
-
-# Copy full application codebase
+# Copy full application codebase first so artisan and all classes exist
 COPY . .
+
+# Install PHP dependencies with full scripts and optimization
+RUN composer install     --no-dev     --prefer-dist     --optimize-autoloader     --no-interaction
 
 # Copy compiled frontend assets from Stage 1
 COPY --from=frontend-builder /app/public/build ./public/build
