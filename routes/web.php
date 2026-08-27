@@ -57,6 +57,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Field & GPS Attendance Map + Manual Admin Location Update
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/attendance/live', [AttendanceController::class, 'liveLocations'])->name('attendance.live');
+        Route::get('/attendance/trail/{user}', [AttendanceController::class, 'trail'])->name('attendance.trail');
         Route::post('/attendance/manual-update', [AttendanceController::class, 'manualUpdate'])->name('attendance.manual-update');
 
         // Periodic Performance Reports & Printable PDF + Native Excel (.xlsx) Export

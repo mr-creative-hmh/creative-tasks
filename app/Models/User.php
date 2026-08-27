@@ -76,4 +76,9 @@ class User extends Authenticatable
     {
         return $this->attendance_mode === 'fixed';
     }
+
+    public function locationPoints(): HasMany
+    {
+        return $this->hasMany(AttendanceLocationPoint::class);
+    }
 }

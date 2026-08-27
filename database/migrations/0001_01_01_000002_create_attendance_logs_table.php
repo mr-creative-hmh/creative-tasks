@@ -15,6 +15,7 @@ return new class extends Migration
             $table->decimal('longitude', 11, 8);
             $table->date('log_date');
             $table->time('log_time');
+            $table->string('notes')->nullable();
             $table->timestamps();
 
             $table->index(['user_id', 'log_date']);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AttendanceLog extends Model
 {
@@ -16,6 +17,7 @@ class AttendanceLog extends Model
         'longitude',
         'log_date',
         'log_time',
+        'notes',
     ];
 
     protected $casts = [
@@ -27,5 +29,10 @@ class AttendanceLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function locationPoints(): HasMany
+    {
+        return $this->hasMany(AttendanceLocationPoint::class);
     }
 }

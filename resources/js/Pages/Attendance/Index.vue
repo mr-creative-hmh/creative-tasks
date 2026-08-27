@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { t } from '@/i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -22,7 +22,14 @@ import {
   Sparkles,
   Users,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Radio,
+  RefreshCw,
+  Route,
+  Navigation,
+  X,
+  Flag,
+  Activity
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -69,6 +76,46 @@ const isUpdatingManual = ref(false);
 const manualSuccessMsg = ref('');
 const manualErrorMsg = ref('');
 
+// ==========================================
+// 1. LIVE RADAR SYNC STATE
+// ==========================================
+const isRadarScanning = ref(false);
+const livePoints = ref(null);
+const liveActiveCount = ref(0);
+const autoRefreshEnabled = ref(false);
+let autoRefreshTimer = null;
+
+// ==========================================
+// 2. LOCATION TRAIL / BREADCRUMBS STATE
+// ==========================================
+const selectedTrailEmployee = ref(null);
+const trailPoints = ref([]);
+const isTrailLoading = ref(false);
+const trailError = ref('');
+
+// Haversine distance calculator between multiple points in km
+const trailTotalDistanceKm = computed(() => {
+  if (!trailPoints.value || trailPoints.value.length < 2) return '0.00';
+  let totalMeters = 0;
+  for (let i = 0; i < trailPoints.value.length - 1; i++) {
+    const p1 = trailPoints.value[i];
+    const p2 = trailPoints.value[i + 1];
+    const lat1 = (p1.latitude * Math.PI) / 180;
+    const lon1 = (p1.longitude * Math.PI) / 180;
+    const lat2 = (p2.latitude * Math.PI) / 180;
+    const lon2 = (p2.longitude * Math.PI) / 180;
+    const dLat = lat2 - lat1;
+    const dLon = lon2 - lon1;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    totalMeters += 6371000 * c;
+  }
+  if (totalMeters < 1000) {
+    return `${Math.round(totalMeters)} ${t('meters')}`;
+  }
+  return `${(totalMeters / 1000).toFixed(2)} ${t('kilometers')}`;
+});
+
 function applyFilters() {
   const clean = {};
   for (const [k, v] of Object.entries(filterForm.value)) {
@@ -79,18 +126,97 @@ function applyFilters() {
   router.get('/attendance', clean, { preserveState: true, replace: true });
 }
 
-// Convert logs to map points
+// Convert logs or livePoints to map points
 const mapPoints = computed(() => {
+  if (livePoints.value && livePoints.value.length > 0) {
+    return livePoints.value;
+  }
   return props.logs.data.map(log => ({
     id: log.id,
+    user_id: log.user_id,
     latitude: Number(log.latitude),
     longitude: Number(log.longitude),
     user_name: log.user?.name || '',
+    job_title: log.user?.job_title || '',
     department_name: log.user?.department?.name || '',
     log_time: log.log_time,
     log_date: log.log_date,
+    status: 'active',
   }));
 });
+
+// Fetch Live Locations from Server (Live Radar)
+async function triggerLiveRadarSync() {
+  isRadarScanning.value = true;
+  try {
+    const res = await axios.get('/attendance/live', {
+      params: { date: filterForm.value.date }
+    });
+    if (res.data && res.data.points) {
+      livePoints.value = res.data.points;
+      liveActiveCount.value = res.data.active_count || 0;
+    }
+  } catch (err) {
+    console.error('Live radar sync error:', err);
+  } finally {
+    isRadarScanning.value = false;
+  }
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled.value = !autoRefreshEnabled.value;
+  if (autoRefreshEnabled.value) {
+    triggerLiveRadarSync();
+    autoRefreshTimer = setInterval(triggerLiveRadarSync, 30000);
+  } else {
+    if (autoRefreshTimer) {
+      clearInterval(autoRefreshTimer);
+      autoRefreshTimer = null;
+    }
+  }
+}
+
+// Fetch Trail for Specific Employee
+async function viewEmployeeTrail(user) {
+  if (!user || !user.id) return;
+  selectedTrailEmployee.value = user;
+  isTrailLoading.value = true;
+  trailError.value = '';
+  trailPoints.value = [];
+
+  try {
+    const res = await axios.get(`/attendance/trail/${user.id}`, {
+      params: { date: filterForm.value.date }
+    });
+    if (res.data && res.data.points && res.data.points.length > 0) {
+      trailPoints.value = res.data.points;
+    } else {
+      // If no intermediate points, use current log coordinates as a single point
+      const currentLog = props.logs.data.find(l => l.user_id === user.id);
+      if (currentLog && currentLog.latitude && currentLog.longitude) {
+        trailPoints.value = [{
+          id: currentLog.id,
+          latitude: Number(currentLog.latitude),
+          longitude: Number(currentLog.longitude),
+          time: currentLog.log_time || '--:--',
+          time_human: t('currentPoint'),
+        }];
+      } else {
+        trailError.value = t('noTrailPoints');
+      }
+    }
+  } catch (err) {
+    trailError.value = err.response?.data?.message || t('connectionFailed');
+  } finally {
+    isTrailLoading.value = false;
+  }
+}
+
+function closeTrailView() {
+  selectedTrailEmployee.value = null;
+  trailPoints.value = [];
+  trailError.value = '';
+}
 
 function handleMapCoordinateSelect(coords) {
   manualForm.value.latitude = Number(coords.latitude.toFixed(6));
@@ -118,250 +244,362 @@ async function submitManualLocation() {
     manualSuccessMsg.value = res.data.message || t('savedSuccess');
     setTimeout(() => {
       router.reload({ preserveScroll: true });
-    }, 1000);
+    }, 800);
   } catch (err) {
-    manualErrorMsg.value = err.response?.data?.message || 'Error updating location';
+    manualErrorMsg.value = err.response?.data?.message || t('saveFailed');
   } finally {
     isUpdatingManual.value = false;
   }
 }
+
+onUnmounted(() => {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+  }
+});
 </script>
 
 <template>
   <Head :title="t('navAttendance')" />
 
   <AppLayout>
-    <div class="w-full space-y-6">
-      
-      <!-- Unified Page Banner -->
+    <div class="space-y-6 animate-fade-in pb-12">
+      <!-- Page Header Banner -->
       <PageBanner
-        :title="t('attendanceMapTitle')"
+        :title="t('navAttendance')"
         :subtitle="t('attendanceSubtitle')"
-        :badge="t('attendanceTodayLabel') + ': ' + stats.total_present_today + ' / ' + stats.total_employees"
-        :icon="MapPin"
       >
         <template #actions>
-          <button
-            v-if="canManualEdit"
-            @click="showManualPanel = !showManualPanel"
-            type="button"
-            class="h-10 px-4 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Edit3 class="w-4 h-4" />
-            <span>{{ t('manualPinBtn') }}</span>
-            <ChevronUp v-if="showManualPanel" class="w-3.5 h-3.5" />
-            <ChevronDown v-else class="w-3.5 h-3.5" />
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Live Radar Sync Button -->
+            <button
+              @click="triggerLiveRadarSync"
+              :disabled="isRadarScanning"
+              type="button"
+              class="h-10 px-4 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
+              :title="t('liveRadar')"
+            >
+              <Radio class="w-4 h-4" :class="{ 'animate-pulse text-emerald-300': isRadarScanning }" />
+              <span>{{ isRadarScanning ? t('liveRadarScanning') : t('liveRadar') }}</span>
+              <span v-if="liveActiveCount > 0" class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-[10px] font-black">
+                {{ liveActiveCount }}
+              </span>
+            </button>
+
+            <!-- Auto Refresh Toggle -->
+            <button
+              @click="toggleAutoRefresh"
+              type="button"
+              :class="autoRefreshEnabled ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white/10 text-white/80 hover:bg-white/20'"
+              class="h-10 px-3.5 rounded-2xl font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': autoRefreshEnabled }" />
+              <span>{{ t('autoRefresh') }}</span>
+            </button>
+
+            <!-- Admin Manual Pin Button -->
+            <button
+              v-if="canManualEdit"
+              @click="showManualPanel = !showManualPanel"
+              type="button"
+              class="h-10 px-4 rounded-2xl bg-white text-sky-900 font-bold text-xs shadow-lg hover:shadow-xl hover:bg-slate-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <Edit3 class="w-4 h-4 text-sky-600" />
+              <span>{{ showManualPanel ? t('hideManualAdjustment') : t('manualLocationPin') }}</span>
+            </button>
+          </div>
         </template>
       </PageBanner>
 
-      <!-- Admin / Head Manual Pinning Drawer Card -->
-      <div 
-        v-if="canManualEdit && showManualPanel" 
-        class="bg-gradient-to-r from-sky-50/90 to-slate-50/90 dark:from-slate-900 dark:to-slate-850 p-4 sm:p-5 rounded-3xl border border-sky-200/80 dark:border-sky-900/50 shadow-xs animate-fade-in"
-      >
-        <div class="flex items-center justify-between mb-3 pb-2 border-b border-sky-100 dark:border-slate-800">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-accent animate-pulse"></span>
-            <h3 class="text-xs font-bold text-slate-900 dark:text-white">
-              {{ t('adminManualLocationTitle') }}
-            </h3>
+      <!-- Stats Counters -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div class="space-y-1">
+            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statTotalEmployees') }}</p>
+            <h3 class="text-2xl font-black text-slate-900 dark:text-white">{{ stats.total_employees }}</h3>
           </div>
-          <span class="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
-            {{ t('manualPinHint') }}
-          </span>
+          <div class="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+            <Users class="w-6 h-6" />
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Target Employee -->
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">{{ t('targetEmployee') }} *</label>
+        <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div class="space-y-1">
+            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statPresentToday') }}</p>
+            <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ stats.total_present_today }}</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 class="w-6 h-6" />
+          </div>
+        </div>
+
+        <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+          <div class="space-y-1">
+            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ t('statAbsentToday') }}</p>
+            <h3 class="text-2xl font-black text-rose-600 dark:text-rose-400">{{ Math.max(0, stats.total_employees - stats.total_present_today) }}</h3>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
+            <AlertCircle class="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3 flex-wrap flex-1">
+          <!-- Date Filter -->
+          <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
+            <Calendar class="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="date"
+              v-model="filterForm.date"
+              @change="applyFilters"
+              class="bg-transparent border-0 p-0 text-slate-700 dark:text-slate-200 font-bold focus:ring-0 cursor-pointer"
+            />
+          </div>
+
+          <!-- Department Filter -->
+          <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs min-w-[200px]">
+            <Building2 class="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              v-model="filterForm.department_id"
+              @change="applyFilters"
+              class="bg-transparent border-0 p-0 text-slate-700 dark:text-slate-200 font-bold focus:ring-0 w-full cursor-pointer"
+            >
+              <option value="">{{ t('allDepartments') }}</option>
+              <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          @click="applyFilters"
+          type="button"
+          class="h-9 px-4 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <Filter class="w-3.5 h-3.5" />
+          <span>{{ t('filter') }}</span>
+        </button>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- MAP VIEW & INTERACTIVE TRAIL VIEWER                       -->
+      <!-- ========================================================= -->
+      <div class="relative space-y-3">
+        <!-- Trail Floating Information Banner (Shown when an employee's trail is active) -->
+        <div
+          v-if="selectedTrailEmployee"
+          class="p-4 rounded-3xl bg-gradient-to-r from-sky-600 via-sky-700 to-teal-600 text-white shadow-xl flex items-center justify-between flex-wrap gap-4 animate-fade-in"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black">
+              <Route class="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-sky-200">{{ t('trailTitle') }}:</span>
+                <span class="font-black text-sm text-white">{{ selectedTrailEmployee.name }}</span>
+                <span v-if="selectedTrailEmployee.department" class="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">
+                  {{ selectedTrailEmployee.department }}
+                </span>
+              </div>
+              <div class="flex items-center gap-4 text-xs text-sky-100 mt-1 font-medium flex-wrap">
+                <span>📍 {{ t('trailPointsCount') }}: <strong class="font-mono font-bold text-white">{{ trailPoints.length }}</strong></span>
+                <span>🛣️ {{ t('approxDistance') }}: <strong class="font-mono font-bold text-white">{{ trailTotalDistanceKm }}</strong></span>
+                <span v-if="trailPoints.length > 0">⏱️ {{ t('startPoint') }}: <strong class="font-mono font-bold text-white">{{ trailPoints[0].time }}</strong></span>
+                <span v-if="trailPoints.length > 1">🏁 {{ t('currentPoint') }}: <strong class="font-mono font-bold text-white">{{ trailPoints[trailPoints.length - 1].time }}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            @click="closeTrailView"
+            type="button"
+            class="h-9 px-4 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+          >
+            <X class="w-3.5 h-3.5" />
+            <span>{{ t('hideTrail') }}</span>
+          </button>
+        </div>
+
+        <!-- Leaflet Map Component -->
+        <AttendanceMap
+          :points="mapPoints"
+          :trail-points="trailPoints"
+          :selected-employee="selectedTrailEmployee"
+          :editable="showManualPanel"
+          :selected-coords="manualForm"
+          @select-coordinates="handleMapCoordinateSelect"
+          @select-employee="viewEmployeeTrail"
+        />
+      </div>
+
+      <!-- Admin Manual Adjustment Floating Panel -->
+      <div
+        v-if="canManualEdit && showManualPanel"
+        class="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-rose-500/30 shadow-xl space-y-4 animate-fade-in"
+      >
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <Edit3 class="w-5 h-5 text-rose-600" />
+            <h4 class="font-black text-sm text-slate-900 dark:text-white">{{ t('manualLocationPin') }}</h4>
+          </div>
+          <span class="text-xs text-slate-400">{{ t('manualPinInstructions') }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Employee Picker -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ t('employee') }} *</label>
             <select
               v-model="manualForm.user_id"
-              class="w-full h-10 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
+              class="w-full h-11 px-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold focus:ring-2 focus:ring-accent"
             >
-              <option value="">{{ t('selectEmployee') }}</option>
+              <option value="">-- {{ t('selectEmployee') }} --</option>
               <option v-for="emp in allEmployees" :key="emp.id" :value="emp.id">
-                {{ emp.name }} ({{ emp.department?.name || t('department') }})
+                {{ emp.name }} ({{ emp.department?.name || t('noDepartment') }})
               </option>
             </select>
           </div>
 
-          <!-- Date -->
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">{{ t('attendanceDate') }} *</label>
+          <!-- Latitude -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ t('fixedLat') }} *</label>
             <input
-              v-model="manualForm.date"
-              type="date"
-              class="w-full h-10 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 font-mono focus:border-sky-500"
+              type="number"
+              step="0.000001"
+              v-model="manualForm.latitude"
+              placeholder="33.31524"
+              class="w-full h-11 px-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold focus:ring-2 focus:ring-accent"
             />
           </div>
 
-          <!-- Coordinates Display -->
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">{{ t('selectedCoordinates') }}</label>
-            <div class="h-10 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs font-mono">
-              <span v-if="manualForm.latitude && manualForm.longitude" class="text-slate-800 dark:text-slate-100 font-bold">
-                {{ manualForm.latitude }}, {{ manualForm.longitude }}
-              </span>
-              <span v-else class="text-slate-400 italic text-[11px]">
-                {{ t('clickOnMapToPin') }}
-              </span>
-              <MapPin class="w-3.5 h-3.5 text-accent shrink-0" />
-            </div>
-          </div>
-
-          <!-- Action Button -->
-          <div class="flex items-end">
-            <button
-              @click="submitManualLocation"
-              :disabled="isUpdatingManual || !manualForm.user_id || !manualForm.latitude"
-              type="button"
-              class="w-full h-10 rounded-xl bg-accent bg-accent-hover text-white font-bold text-xs shadow-accent active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Save class="w-4 h-4" />
-              <span>{{ isUpdatingManual ? t('saving') : t('saveLocationBtn') }}</span>
-            </button>
+          <!-- Longitude -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ t('fixedLng') }} *</label>
+            <input
+              type="number"
+              step="0.000001"
+              v-model="manualForm.longitude"
+              placeholder="44.36612"
+              class="w-full h-11 px-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold focus:ring-2 focus:ring-accent"
+            />
           </div>
         </div>
 
-        <!-- Success / Error Feedback Alerts -->
-        <div v-if="manualSuccessMsg" class="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 class="w-4 h-4 text-emerald-500 shrink-0" />
+        <!-- Success / Error messages -->
+        <div v-if="manualSuccessMsg" class="p-3 rounded-2xl bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{{ manualSuccessMsg }}</span>
         </div>
-        <div v-if="manualErrorMsg" class="mt-3 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
-          <AlertCircle class="w-4 h-4 text-rose-500 shrink-0" />
+        <div v-if="manualErrorMsg" class="p-3 rounded-2xl bg-rose-50 text-rose-800 text-xs font-bold flex items-center gap-2">
+          <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
           <span>{{ manualErrorMsg }}</span>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button
+            @click="submitManualLocation"
+            :disabled="isUpdatingManual"
+            type="button"
+            class="h-10 px-5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-lg shadow-rose-600/30 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Save class="w-4 h-4" />
+            <span>{{ isUpdatingManual ? t('saving') : t('saveManualPin') }}</span>
+          </button>
         </div>
       </div>
 
-      <!-- Live Interactive Map Section -->
-      <div class="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-            <h2 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              {{ t('attendanceMapTitle') }}
-            </h2>
+      <!-- Attendance Table -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+              <UserCheck class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-black text-sm text-slate-900 dark:text-white">{{ t('tableAttendanceLog') }}</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">{{ t('attendanceSubtitle') }}</p>
+            </div>
           </div>
-          <span class="text-[11px] text-slate-500 dark:text-slate-400">
-            {{ canManualEdit ? t('mapHintAdmin') : t('autoTrackingActive') }}
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400">
+            {{ props.logs.data.length }} {{ t('records') }}
           </span>
         </div>
 
-        <AttendanceMap
-          :points="mapPoints"
-          :editable="canManualEdit && showManualPanel"
-          :selected-coords="manualForm.latitude ? { latitude: manualForm.latitude, longitude: manualForm.longitude } : null"
-          @select-coordinates="handleMapCoordinateSelect"
-        />
-      </div>
-
-      <!-- Filters & Daily Log Table -->
-      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        
-        <!-- Table Filters Header -->
-        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Date Filter -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('date') }}</label>
-              <div class="relative">
-                <input
-                  v-model="filterForm.date"
-                  @change="applyFilters"
-                  type="date"
-                  class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 font-mono focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <!-- Department Filter -->
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">{{ t('department') }}</label>
-              <select
-                v-model="filterForm.department_id"
-                @change="applyFilters"
-                class="w-full h-10 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 outline-none text-slate-800 dark:text-slate-100 focus:border-sky-500 font-medium"
-              >
-                <option value="">{{ t('allDepartments') }}</option>
-                <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                  {{ dept.name }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Stat Info Badge -->
-            <div class="h-10 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 px-4 rounded-xl border border-slate-100 dark:border-slate-800 self-end">
-              <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">{{ t('attendanceTodayLabel') }}:</span>
-              <span class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                {{ logs.total || logs.data.length }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Attendance Logs Table -->
         <div class="overflow-x-auto">
           <table class="w-full text-start text-xs">
-            <thead class="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-800">
               <tr>
-                <th class="px-5 py-4 text-start">{{ t('employeeName') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('department') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('tableLogDate') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('tableLogTime') }}</th>
-                <th class="px-5 py-4 text-start">{{ t('locationCoords') }}</th>
-                <th class="px-5 py-4 text-center">{{ t('googleMaps') }}</th>
+                <th class="px-5 py-3.5 text-start">{{ t('employee') }}</th>
+                <th class="px-5 py-3.5 text-start">{{ t('department') }}</th>
+                <th class="px-5 py-3.5 text-start">{{ t('tableLogTime') }}</th>
+                <th class="px-5 py-3.5 text-start">{{ t('gpsCoordinates') }}</th>
+                <th class="px-5 py-3.5 text-start">{{ t('notes') }}</th>
+                <th class="px-5 py-3.5 text-end">{{ t('actions') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
               <tr
                 v-for="log in logs.data"
                 :key="log.id"
-                class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                :class="{ 'bg-sky-50/50 dark:bg-sky-950/30': selectedTrailEmployee?.id === log.user_id }"
               >
-                <!-- Name -->
-                <td class="px-5 py-4 font-bold text-slate-900 dark:text-white">
-                  {{ log.user?.name }}
+                <!-- Employee -->
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-600 to-teal-600 text-white font-black text-xs flex items-center justify-center">
+                      {{ log.user?.name ? log.user.name.charAt(0) : 'U' }}
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900 dark:text-white">{{ log.user?.name }}</div>
+                      <div class="text-[10px] text-slate-400">{{ log.user?.job_title || log.user?.email }}</div>
+                    </div>
+                  </div>
                 </td>
 
                 <!-- Department -->
-                <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                  {{ log.user?.department?.name || '-' }}
-                </td>
-
-                <!-- Date -->
-                <td class="px-5 py-4 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
-                  {{ log.log_date }}
+                <td class="px-5 py-3.5 text-slate-600 dark:text-slate-300 font-semibold">
+                  {{ log.user?.department?.name || t('noDepartment') }}
                 </td>
 
                 <!-- Time -->
-                <td class="px-5 py-4 text-slate-900 dark:text-white font-mono font-bold">
-                  {{ log.log_time }}
+                <td class="px-5 py-3.5 font-mono text-slate-700 dark:text-slate-300 font-bold">
+                  {{ log.log_time || '--:--' }}
                 </td>
 
                 <!-- Coordinates -->
-                <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                  {{ Number(log.latitude).toFixed(5) }}, {{ Number(log.longitude).toFixed(5) }}
+                <td class="px-5 py-3.5 font-mono text-[11px] text-slate-500">
+                  <span v-if="log.latitude && log.longitude" class="flex items-center gap-1">
+                    <MapPin class="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                    <span>{{ Number(log.latitude).toFixed(5) }}, {{ Number(log.longitude).toFixed(5) }}</span>
+                  </span>
+                  <span v-else class="text-slate-400">—</span>
                 </td>
 
-                <!-- Google Maps Link -->
-                <td class="px-5 py-4 text-center">
-                  <a
-                    :href="`https://maps.google.com/?q=${log.latitude},${log.longitude}`"
-                    target="_blank"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 text-[11px] font-bold hover:bg-sky-100 dark:hover:bg-sky-900 transition-colors"
+                <!-- Notes / Status -->
+                <td class="px-5 py-3.5 text-slate-500 text-[11px]">
+                  {{ log.notes || '—' }}
+                </td>
+
+                <!-- Actions: View Trail -->
+                <td class="px-5 py-3.5 text-end">
+                  <button
+                    @click="viewEmployeeTrail(log.user)"
+                    type="button"
+                    class="h-8 px-3 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-[11px] transition-all flex items-center gap-1.5 ms-auto cursor-pointer active:scale-95 shadow-2xs"
+                    :title="t('viewTrail')"
                   >
-                    <ExternalLink class="w-3 h-3" />
-                    <span>{{ t('viewOnGoogleMaps') }}</span>
-                  </a>
+                    <Route class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                    <span>{{ t('viewTrail') }}</span>
+                  </button>
                 </td>
               </tr>
 
               <tr v-if="logs.data.length === 0">
-                <td colspan="6" class="py-12 text-center text-slate-400">
-                  {{ t('noLogsFound') }}
+                <td colspan="6" class="px-5 py-12 text-center text-slate-400 text-xs">
+                  {{ t('noRecordsFound') }}
                 </td>
               </tr>
             </tbody>
@@ -369,12 +607,9 @@ async function submitManualLocation() {
         </div>
 
         <!-- Pagination -->
-        <Pagination
-          :links="logs.links"
-          :from="logs.from"
-          :to="logs.to"
-          :total="logs.total"
-        />
+        <div v-if="logs.links && logs.links.length > 3" class="p-4 border-t border-slate-100 dark:border-slate-800">
+          <Pagination :links="logs.links" />
+        </div>
       </div>
 
     </div>

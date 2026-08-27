@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\JsonResponse;
 use App\Models\AttendanceLog;
+use App\Models\AttendanceLocationPoint;
 use App\Models\Department;
 use App\Models\User;
 use Carbon\Carbon;
@@ -104,10 +105,11 @@ class AttendanceController extends Controller
             $notes = 'حضور GPS حي ومباشر' . $accuracyText;
         }
 
+        $today = Carbon::today()->toDateString();
         $log = AttendanceLog::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'log_date' => Carbon::today()->toDateString(),
+                'log_date' => $today,
             ],
             [
                 'latitude' => $latitude,
@@ -116,6 +118,43 @@ class AttendanceController extends Controller
                 'notes' => $notes,
             ]
         );
+
+        // Record location breadcrumb point if moved or after interval
+        $lastPoint = AttendanceLocationPoint::where('user_id', $user->id)
+            ->whereDate('recorded_at', $today)
+            ->latest('id')
+            ->first();
+
+        $shouldRecord = false;
+        if (!$lastPoint) {
+            $shouldRecord = true;
+        } else {
+            // Calculate approximate distance moved (Haversine formula in PHP)
+            $lat1 = deg2rad($lastPoint->latitude);
+            $lon1 = deg2rad($lastPoint->longitude);
+            $lat2 = deg2rad($latitude);
+            $lon2 = deg2rad($longitude);
+            $dLat = $lat2 - $lat1;
+            $dLon = $lon2 - $lon1;
+            $a = sin($dLat / 2) ** 2 + cos($lat1) * cos($lat2) * (sin($dLon / 2) ** 2);
+            $distanceMeters = 6371000 * 2 * asin(sqrt($a));
+
+            // Record if moved > 15 meters or if 3+ minutes passed
+            if ($distanceMeters >= 15 || $lastPoint->created_at->diffInMinutes(now()) >= 3) {
+                $shouldRecord = true;
+            }
+        }
+
+        if ($shouldRecord) {
+            AttendanceLocationPoint::create([
+                'user_id' => $user->id,
+                'attendance_log_id' => $log->id,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'accuracy' => $validated['accuracy'] ?? null,
+                'recorded_at' => now(),
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -157,6 +196,92 @@ class AttendanceController extends Controller
             'status' => 'success',
             'message' => 'تم تثبيت وتحديث موقع الموظف بنجاح من قبل الإدارة',
             'log' => $log,
+        ]);
+    }
+
+    public function trail(Request $request, User $user): JsonResponse
+    {
+        $auth = $request->user();
+        if ($auth->role === 'employee' && $auth->id !== $user->id) {
+            return response()->json(['message' => 'غير مصرح'], 403);
+        }
+        if ($auth->role === 'head' && $user->department_id !== $auth->department_id) {
+            return response()->json(['message' => 'غير مصرح'], 403);
+        }
+
+        $date = $request->input('date', Carbon::today()->toDateString());
+        $points = AttendanceLocationPoint::where('user_id', $user->id)
+            ->whereDate('recorded_at', $date)
+            ->orderBy('recorded_at', 'asc')
+            ->get(['id', 'latitude', 'longitude', 'accuracy', 'recorded_at'])
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'latitude' => (float) $p->latitude,
+                'longitude' => (float) $p->longitude,
+                'accuracy' => $p->accuracy,
+                'time' => $p->recorded_at->format('H:i:s'),
+                'time_human' => $p->recorded_at->diffForHumans(),
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'job_title' => $user->job_title,
+                'department' => $user->department?->name,
+            ],
+            'date' => $date,
+            'points' => $points,
+            'total_points' => $points->count(),
+        ]);
+    }
+
+    public function liveLocations(Request $request): JsonResponse
+    {
+        $auth = $request->user();
+        $date = $request->input('date', Carbon::today()->toDateString());
+
+        $query = AttendanceLog::with('user.department')
+            ->whereDate('log_date', $date);
+
+        if ($auth->role === 'head') {
+            $query->whereHas('user', fn($q) => $q->where('department_id', $auth->department_id));
+        }
+
+        $now = Carbon::now();
+
+        $points = $query->get()->map(function ($log) use ($now) {
+            $lastSync = $log->updated_at ?: $log->created_at;
+            $diffSeconds = $lastSync ? $now->diffInSeconds($lastSync) : 99999;
+            $status = 'offline';
+            if ($diffSeconds < 180) {
+                $status = 'active';
+            } elseif ($diffSeconds < 900) {
+                $status = 'recent';
+            }
+
+            return [
+                'id' => $log->id,
+                'user_id' => $log->user_id,
+                'user_name' => $log->user?->name,
+                'job_title' => $log->user?->job_title,
+                'department_name' => $log->user?->department?->name,
+                'latitude' => (float) $log->latitude,
+                'longitude' => (float) $log->longitude,
+                'log_time' => $log->log_time,
+                'last_seen_seconds' => $diffSeconds,
+                'status' => $status,
+                'notes' => $log->notes,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'date' => $date,
+            'points' => $points,
+            'active_count' => $points->where('status', 'active')->count(),
+            'total_present' => $points->count(),
         ]);
     }
 }
