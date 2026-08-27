@@ -1,95 +1,59 @@
-FROM php:8.3-cli
-
-# Set environment
-ENV NODE_ENV=production
-
-# Install system packages & dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    zip \
-    curl \
-    libzip-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
-    libicu-dev \
-    libsqlite3-dev \
-    sqlite3 \
-    default-mysql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configure & Install PHP Extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-
-RUN docker-php-ext-install \
-    pdo \
-    pdo_sqlite \
-    pdo_mysql \
-    bcmath \
-    exif \
-    gd \
-    intl \
-    zip
-
-# Copy Composer binary
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Copy Node.js 22 & NPM
-COPY --from=node:22 /usr/local /usr/local
+# Stage 1: Build Vue 3 + Inertia + Tailwind + Leaflet Assets
+FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app
 
 # Copy dependency manifests
-COPY composer.json composer.lock ./
 COPY package*.json ./
 
-# Install Node dependencies (all deps required for Vite build)
+# Install frontend dependencies
 RUN npm ci || npm install
 
 # Copy application source code
 COPY . .
 
-# Install PHP dependencies
-RUN composer install \
-    --no-dev \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-interaction
-
-# Build Vue 3 + Inertia SPA production bundle
+# Build production assets into /app/public/build
 RUN npm run build
 
-# Remove node_modules to keep Docker image lightweight
-RUN rm -rf node_modules ~/.npm
+# Stage 2: Production PHP 8.3 FPM + Nginx Runtime
+FROM php:8.3-fpm-bookworm
 
-# Prepare Laravel storage and database directories
-RUN mkdir -p \
-    database \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/framework/testing \
-    storage/logs \
-    bootstrap/cache \
-    public/build
+WORKDIR /var/www/html
 
-RUN touch database/database.sqlite
-RUN chmod -R 777 storage bootstrap/cache database public/build
+# Install Nginx and required OS packages
+RUN apt-get update && apt-get install -y --no-install-recommends     nginx     git     unzip     zip     curl     libzip-dev     libpng-dev     libjpeg62-turbo-dev     libfreetype6-dev     libonig-dev     libxml2-dev     libicu-dev     libsqlite3-dev     sqlite3     default-mysql-client     && rm -rf /var/lib/apt/lists/*
+
+# Configure & Install PHP Extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg     && docker-php-ext-install -j$(nproc)     pdo     pdo_sqlite     pdo_mysql     bcmath     exif     gd     intl     zip     opcache
+
+# Copy Composer binary from official image
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copy composer files for caching
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies without dev packages
+RUN composer install     --no-dev     --prefer-dist     --optimize-autoloader     --no-interaction
+
+# Copy full application codebase
+COPY . .
+
+# Copy compiled frontend assets from Stage 1
+COPY --from=frontend-builder /app/public/build ./public/build
+
+# Copy Nginx server block configuration
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Clean default Debian Nginx sites
+RUN rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
+
+# Copy entrypoint startup script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Fix permissions
+RUN chown -R www-data:www-data /var/www/html     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 8080
 
-CMD sh -c "\
-mkdir -p database && \
-touch database/database.sqlite || true && \
-chmod -R 777 database storage bootstrap/cache public/build || true && \
-php artisan optimize:clear && \
-php artisan storage:link || true && \
-php artisan migrate --force && \
-php artisan db:seed --class=ProductionSeeder --force || true && \
-php artisan config:cache && \
-php artisan route:cache && \
-php artisan view:cache && \
-php artisan serve --host=0.0.0.0 --port=\${PORT:-8080}"
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
